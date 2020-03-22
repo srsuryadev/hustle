@@ -3,7 +3,7 @@
 
 #include <arrow/api.h>
 
-#define BLOCK_SIZE 1024
+#define BLOCK_SIZE 1 << 20
 
 /**
  * A Hustle Block is a wrapper for an Arrow RecordBatch. An Arrow RecordBatch
@@ -189,6 +189,8 @@ public:
      */
     int get_num_rows() const;
 
+    int get_num_cols() const;
+
     /**
      * Insert a record into the Block.
      *
@@ -217,13 +219,13 @@ public:
                         column_data);
 
     bool
-    insert_record(std::vector<std::string_view> record, int32_t *byte_widths,
-            int
-    delimiter_size);
+    insert_record(std::vector<std::string_view> record, int32_t *byte_widths);
 
     bool insert_records(std::vector<std::shared_ptr<arrow::ArrayData>>
             column_data,
             int32_t offset, int64_t length);
+
+    void truncate_buffers();
 
 private:
 
@@ -257,6 +259,9 @@ private:
 
     // Number of rows in the Block, including valid and invalid rows.
     int num_rows;
+
+    // Number of columns in the Block, excluding the valid column.
+    int num_cols;
 
 };
 

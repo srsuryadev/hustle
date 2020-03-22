@@ -93,7 +93,14 @@ std::shared_ptr<Table> read_from_file(const char *path) {
     arrow::Status status;
 
     std::shared_ptr<arrow::io::ReadableFile> infile;
-    status = arrow::io::ReadableFile::Open(path, &infile);
+    auto result = arrow::io::ReadableFile::Open(path,
+            arrow::default_memory_pool());
+    if (result.ok()) {
+        infile = result.ValueOrDie();
+    }
+    else {
+        evaluate_status(result.status(), __FUNCTION__, __LINE__);
+    }
     evaluate_status(status, __FUNCTION__, __LINE__);
 
     std::shared_ptr<arrow::ipc::RecordBatchFileReader> record_batch_reader;
@@ -135,10 +142,15 @@ void write_to_file(const char *path, Table &table) {
     std::shared_ptr<arrow::ipc::RecordBatchWriter> record_batch_writer;
     arrow::Status status;
 
-
     evaluate_status(status, __FUNCTION__, __LINE__);
 
-    status = arrow::io::FileOutputStream::Open(path, &file);
+    auto result = arrow::io::FileOutputStream::Open(path, false);
+    if (result.ok()) {
+        file = result.ValueOrDie();
+    }
+    else {
+        evaluate_status(result.status(), __FUNCTION__, __LINE__);
+    }
     evaluate_status(status, __FUNCTION__, __LINE__);
     status = arrow::ipc::RecordBatchFileWriter::Open(
             &*file, table.get_schema()).status();
@@ -152,6 +164,9 @@ void write_to_file(const char *path, Table &table) {
     auto blocks = table.get_blocks();
 
     for (int i = 0; i < blocks.size(); i++) {
+        // IMPORTANT: The buffer size must be consistent with the ArrayData
+        // length, or else data will not be properly written to file.
+        blocks[i]->truncate_buffers();
         status = record_batch_writer->WriteRecordBatch(
                 *blocks[i]->get_records());
         evaluate_status(status, __FUNCTION__, __LINE__);
@@ -166,16 +181,18 @@ int compute_fixed_record_width(std::shared_ptr<arrow::Schema> schema) {
 
     int fixed_width = 0;
 
-    for (auto field : schema->fields()) {
+    for (auto &field : schema->fields()) {
 
         switch (field->type()->id()) {
             case arrow::Type::STRING: {
                 break;
             }
-            case arrow::Type::BOOL:
+            case arrow::Type::BOOL: {
+                break;
+            }
             case arrow::Type::DOUBLE:
             case arrow::Type::INT64: {
-                fixed_width += field->type()->layout().bit_widths[1] / 8;
+                fixed_width += sizeof(int64_t);
                 break;
             }
             default: {
@@ -237,8 +254,7 @@ std::shared_ptr<Table> read_from_csv_file(const char* path,
             }
             default: {
                 // TODO(nicholas) this will not properly handle boolean values!
-                byte_widths[i] = schema->field(i)->type()->layout()
-                        .bit_widths[1]/8;
+                byte_widths[i] = sizeof(int64_t);
                 // TODO(nicholas): something here?
             }
         }
@@ -260,38 +276,7 @@ std::shared_ptr<Table> read_from_csv_file(const char* path,
             byte_widths[index] = values[index].length();
         }
 
-        test->insert_record(values, byte_widths, 1);
-
-//        test->insert_record((uint8_t*) buf, byte_widths, 1);
-//
-//        int offset = 0;
-//        for (int i = 0; i < schema->num_fields(); i++) {
-//
-//
-//
-//            // Use index i-1 when indexing values, because it does not include
-//            // valid column.
-//            switch (schema->field(i)->type()->id()) {
-//                case arrow::Type::STRING: {
-//                    num_bytes += values[i].length();
-//                    break;
-//                }
-//                case arrow::Type::INT64: {
-//                    int64_t out;
-//                    absl::SimpleAtoi(values[i], &out);
-//                    std::memcpy(&buf[offset],&out,1);
-//                    break;
-//                }
-//                default: {
-//                    throw std::logic_error(
-//                            std::string("Cannot load data of type ") +
-//                            schema->field(i)->type()->ToString());
-//                }
-//            }
-//            offset += byte_widths[i];
-//        }
-//
-//        test->insert_record((uint8_t*) buf, byte_widths, 1);
+        test->insert_record(values, byte_widths);
     }
 
 
