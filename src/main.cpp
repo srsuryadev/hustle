@@ -46,5 +46,7 @@ int main(int argc, char *argv[]) {
   resolver->resolve(parser->get_parse_tree(), hustleDB.getCatalog());
   std::cout << resolver->to_string(4) << std::endl;
 
+
+
   return 0;
 }

@@ -2,6 +2,7 @@ add_library(
         resolver
         Plan.h
         Resolver.h
+        PlanWalker.h
 )
 
 target_link_libraries(resolver

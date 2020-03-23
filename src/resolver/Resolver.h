@@ -15,18 +15,18 @@ namespace resolver {
 class Resolver {
  public:
   /**
-   * This function takes as input a parse tree from the parser, builds the plan
-   * from bottom to top given the predicates and expressions preserved in the
-   * parse tree.
+   * This function takes as input a parse tree from the parser, builds the
+   * plan from bottom to top given the predicates and expressions preserved
+   * in the parse tree.
    *
-   * First of all, a number of TableReference objects are built. On top of each
-   * TableReference, a Select object is built to contain it. By traversing
-   * the parse_tree->other_pred, we match each select predicate as a filter
-   * onto the corresponding Select object. This step is to push all the select
-   * predicates down to the TableReference objects as much as possible. The
-   * Join objects are then built on top of these Select objects by traversing
-   * parse_tree->loop_pred. The topmost Join object is then captured as an
-   * input to the GroupBy, Project, and OrderBy.
+   * First of all, a number of TableReference objects are built. On top of
+   * each TableReference, a Select object is built to contain it. By
+   * traversing the parse_tree->other_pred, we match each select predicate as
+   * a filter onto the corresponding Select object. This step is to push all
+   * the select predicates down to the TableReference objects as much as
+   * possible. The Join objects are then built on top of these Select objects
+   * by traversing parse_tree->loop_pred. The topmost Join object is then
+   * captured as an input to the GroupBy, Project, and OrderBy.
    *
    * The resolving order is: TableReference, Select, Join, GroupBy, Project
    * and OrderBy.

@@ -24,8 +24,8 @@ class Parser {
    * This function takes as input an "EXPLAIN" sql query as well as the
    * hustleDB, calls the SQLite3's library function through sqlite3_exec,
    * extracts the optimized parse tree which maintains the nested loop
-   * order as well as the predicates. Project, GroupBy and OrderBy are also
-   * perserved in the parse tree.
+   * order as well as the predicates. Project, GroupBy and OrderBy are
+   * also perserved in the parse tree.
    *
    * @param sql: input sql query
    * @param hustleDB: input hustle database
