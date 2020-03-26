@@ -111,7 +111,8 @@ class OperatorsTestFixture : public testing::Test {
 TEST_F(OperatorsTestFixture, AggregateSumTest) {
     auto *aggregate_op = new Aggregate(
       hustle::operators::AggregateKernels::SUM,
-      "int_val"
+      "int_val",
+      ""
     );
     std::string col_name = "int_val";
     int col_val = 235;
@@ -142,14 +143,15 @@ TEST_F(OperatorsTestFixture, AggregateSumTest) {
     // result/out compare
 
     in_table->insert_blocks({block_1});
-    auto out_table = aggregate_op->runOperator({in_table});
+    auto out_table = aggregate_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals(*res_block->get_records()));
 }
 
 TEST_F(OperatorsTestFixture, AggregateSumTestTwoBlocks) {
     auto *aggregate_op = new Aggregate(
             hustle::operators::AggregateKernels::SUM,
-            "int_val"
+            "int_val",
+            ""
     );
     std::string col_name = "int_val";
     int col_val = 235*2;
@@ -175,7 +177,7 @@ TEST_F(OperatorsTestFixture, AggregateSumTestTwoBlocks) {
     // result/out compare
 
     in_table->insert_blocks({block_1, block_2});
-    auto out_table = aggregate_op->runOperator({in_table});
+    auto out_table = aggregate_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals(*res_block->get_records()));
 }
 
@@ -201,7 +203,7 @@ TEST_F(OperatorsTestFixture, AggregateSumTestTwoBlocks) {
 //  auto res_block_record = arrow::RecordBatch::Make(res_block_schema, 1, {res_block_col});
 //  auto res_block = std::make_shared<Block>(Block(rand(), res_block_record, BLOCK_SIZE));
 //  // result/out compare
-//  auto out_block = aggregate_op->runOperator(input_blocks);
+//  auto out_block = aggregate_op->run_operator(input_blocks);
 //  EXPECT_TRUE(out_block[0]->get_records()->ApproxEquals(*res_block->get_records()));
 //}
 //
@@ -227,14 +229,15 @@ TEST_F(OperatorsTestFixture, AggregateSumTestTwoBlocks) {
 //    auto res_block_record = arrow::RecordBatch::Make(res_block_schema, 1, {res_block_col});
 //    auto res_block = std::make_shared<Block>(Block(rand(), res_block_record, BLOCK_SIZE));
 //    // result/out compare
-//    auto out_block = aggregate_op->runOperator(two_blocks);
+//    auto out_block = aggregate_op->run_operator(two_blocks);
 //    EXPECT_TRUE(out_block[0]->get_records()->ApproxEquals(*res_block->get_records()));
 //}
 
 TEST_F(OperatorsTestFixture, AggregateMeanTest) {
   auto *aggregate_op = new Aggregate(
       hustle::operators::AggregateKernels::MEAN,
-      "int_val"
+      "int_val",
+      ""
   );
   std::string col_name = "int_val";
   int64_t col_val = 47; // 235 / 5
@@ -257,7 +260,7 @@ TEST_F(OperatorsTestFixture, AggregateMeanTest) {
     auto res_block = std::make_shared<Block>(Block(0, res_block_record,
                                                    BLOCK_SIZE));
     in_table->insert_blocks({block_1});
-    auto out_table = aggregate_op->runOperator({in_table});
+    auto out_table = aggregate_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals(*res_block->get_records()));
 
 }
@@ -265,7 +268,8 @@ TEST_F(OperatorsTestFixture, AggregateMeanTest) {
 TEST_F(OperatorsTestFixture, AggregateMeanTwoBlocks) {
     auto *aggregate_op = new Aggregate(
             hustle::operators::AggregateKernels::MEAN,
-            "int_val"
+            "int_val",
+            ""
     );
     std::string col_name = "int_val";
     int64_t col_val = 47; // 235 / 5
@@ -288,7 +292,7 @@ TEST_F(OperatorsTestFixture, AggregateMeanTwoBlocks) {
     auto res_block = std::make_shared<Block>(Block(0, res_block_record,
                                                    BLOCK_SIZE));
     in_table->insert_blocks({block_1, block_2});
-    auto out_table = aggregate_op->runOperator({in_table});
+    auto out_table = aggregate_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals(*res_block->get_records()));
 }
 //
@@ -349,7 +353,7 @@ TEST_F(OperatorsTestFixture, AggregateMeanTwoBlocks) {
 //
 //
 //  // result/out compare
-//  auto out_block = join_op->runOperator(join_input_blocks);
+//  auto out_block = join_op->run_operator(join_input_blocks);
 //  //TODO(nicholas) output data values seem malformed. unsure why.
 //  EXPECT_TRUE(out_block[0]->get_records()->ApproxEquals(*res_block->get_records()));
 //
@@ -402,7 +406,7 @@ TEST_F(OperatorsTestFixture, AggregateMeanTwoBlocks) {
 //
 //
 //  // result/out compare
-//  auto out_block = select_op->runOperator(input_blocks);
+//  auto out_block = select_op->run_operator(input_blocks);
 //  EXPECT_TRUE(out_block[0]->get_records()->Equals(*res_block->get_records()));
 //
 //  std::cout << std::endl;
@@ -443,7 +447,7 @@ TEST_F(OperatorsTestFixture, AggregateMeanTwoBlocks) {
 //    auto res_block = std::make_shared<Block>(Block(rand(), res_block_record, BLOCK_SIZE));
 //
 //    // result/out compare
-//    auto out_block = select_op->runOperator(input_blocks);
+//    auto out_block = select_op->run_operator(input_blocks);
 //    EXPECT_TRUE(out_block[0]->get_records()->Equals(*res_block->get_records()));
 //
 //    std::cout << std::endl;
@@ -493,7 +497,7 @@ TEST_F(OperatorsTestFixture, SelectTwoBlocks) {
 
     in_table->insert_blocks({block_1});
     // result/out compare
-    auto out_table = select_op->runOperator({in_table});
+    auto out_table = select_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals
     (*res_block->get_records()));
 
@@ -549,7 +553,7 @@ TEST_F(OperatorsTestFixture, SelectTwoBlocksOneEmpty) {
 
     in_table->insert_blocks({block_1});
     // result/out compare
-    auto out_table = select_op->runOperator({in_table});
+    auto out_table = select_op->run_operator({in_table});
     EXPECT_TRUE(out_table->get_block(0)->get_records()->Equals
             (*res_block->get_records()));
 }
@@ -645,7 +649,7 @@ TEST_F(OperatorsTestFixture2, SelectFromCSV) {
             arrow::compute::Datum((int64_t) 1776)
     );
 
-    auto out_table = select_op->runOperator({in_left_table});
+    auto out_table = select_op->run_operator({in_left_table});
 
     for (int i=0; i<out_table->get_num_blocks(); i++) {
         auto block = out_table->get_block(i);
@@ -696,7 +700,7 @@ TEST_F(OperatorsTestFixture2, SelectFromCSVTwoConditionsSame) {
             hustle::operators::FilterOperator::AND
             );
 
-    auto out_table = composite_select_op->runOperator({in_left_table});
+    auto out_table = composite_select_op->run_operator({in_left_table});
 
     for (int i=0; i<out_table->get_num_blocks(); i++) {
         auto block = out_table->get_block(i);
@@ -754,7 +758,7 @@ TEST_F(OperatorsTestFixture2, SelectFromCSVTwoConditionsDifferent) {
             hustle::operators::FilterOperator::AND
     );
 
-    auto out_table = composite_select_op->runOperator({in_left_table});
+    auto out_table = composite_select_op->run_operator({in_left_table});
 
     auto block = out_table->get_block(0);
 
@@ -772,62 +776,62 @@ TEST_F(OperatorsTestFixture2, SelectFromCSVTwoConditionsDifferent) {
 }
 
 
-TEST_F(OperatorsTestFixture2, HashJoin) {
+//TEST_F(OperatorsTestFixture2, HashJoin) {
+//
+//    auto left_table = read_from_csv_file
+//            ("left_table_2.csv", schema_2, BLOCK_SIZE);
+//
+//    auto right_table = read_from_csv_file
+//            ("right_table_2.csv", schema_2, BLOCK_SIZE);
+//
+//    auto join_op = hustle::operators::Join("id","id");
+//
+//    auto out_table = join_op.hash_join(left_table, right_table);
+//
+//    for (int i=0; i<out_table->get_num_blocks(); i++) {
+//
+//        auto block = out_table->get_block(i);
+//
+//        valid = std::static_pointer_cast<arrow::BooleanArray>
+//                (block->get_valid_column());
+//        column1 = std::static_pointer_cast<arrow::Int64Array>
+//                (block->get_column(0));
+//        column2 = std::static_pointer_cast<arrow::StringArray>
+//                (block->get_column(1));
+//        column3 = std::static_pointer_cast<arrow::StringArray>
+//                (block->get_column(2));
+//
+//        int table_row = 0;
+//
+//        for (int block_row = 0; block_row < block->get_num_rows(); block_row++) {
+//
+//            table_row = block_row + out_table->get_block_row_offset(i);
+//
+//            EXPECT_EQ(valid->Value(block_row), true);
+//            EXPECT_EQ(column1->Value(block_row), table_row);
+//            EXPECT_EQ(column2->GetString(block_row),
+//                      "My key is " + std::to_string(table_row));
+//            EXPECT_EQ(column3->GetString(block_row),
+//                      "And my key is also " + std::to_string(table_row));
+//        }
+//    }
+//}
 
-    auto left_table = read_from_csv_file
-            ("left_table_2.csv", schema_2, BLOCK_SIZE);
-
-    auto right_table = read_from_csv_file
-            ("right_table_2.csv", schema_2, BLOCK_SIZE);
-
-    auto join_op = hustle::operators::Join("id","id");
-
-    auto out_table = join_op.hash_join(left_table, right_table);
-
-    for (int i=0; i<out_table->get_num_blocks(); i++) {
-
-        auto block = out_table->get_block(i);
-
-        valid = std::static_pointer_cast<arrow::BooleanArray>
-                (block->get_valid_column());
-        column1 = std::static_pointer_cast<arrow::Int64Array>
-                (block->get_column(0));
-        column2 = std::static_pointer_cast<arrow::StringArray>
-                (block->get_column(1));
-        column3 = std::static_pointer_cast<arrow::StringArray>
-                (block->get_column(2));
-
-        int table_row = 0;
-
-        for (int block_row = 0; block_row < block->get_num_rows(); block_row++) {
-
-            table_row = block_row + out_table->get_block_row_offset(i);
-
-            EXPECT_EQ(valid->Value(block_row), true);
-            EXPECT_EQ(column1->Value(block_row), table_row);
-            EXPECT_EQ(column2->GetString(block_row),
-                      "My key is " + std::to_string(table_row));
-            EXPECT_EQ(column3->GetString(block_row),
-                      "And my key is also " + std::to_string(table_row));
-        }
-    }
-}
-
-TEST_F(OperatorsTestFixture2, HashJoinEmptyResult) {
-
-    auto left_table = read_from_csv_file
-            ("left_table.csv", schema, BLOCK_SIZE);
-
-    auto right_table = read_from_csv_file
-            ("right_table.csv", schema, BLOCK_SIZE);
-
-    auto join_op = hustle::operators::Join("D", "D");
-
-    auto out_table = join_op.hash_join(left_table, right_table);
-
-    EXPECT_EQ(out_table->get_num_rows(), 0);
-    EXPECT_EQ(out_table->get_num_blocks(), 0);
-}
+//TEST_F(OperatorsTestFixture2, HashJoinEmptyResult) {
+//
+//    auto left_table = read_from_csv_file
+//            ("left_table.csv", schema, BLOCK_SIZE);
+//
+//    auto right_table = read_from_csv_file
+//            ("right_table.csv", schema, BLOCK_SIZE);
+//
+//    auto join_op = hustle::operators::Join("D", "D");
+//
+//    auto out_table = join_op.hash_join(left_table, right_table);
+//
+//    EXPECT_EQ(out_table->get_num_rows(), 0);
+//    EXPECT_EQ(out_table->get_num_blocks(), 0);
+//}
 
 
 
@@ -940,6 +944,29 @@ protected:
     }
 };
 
+TEST_F(SSBTestFixture, GroupByTest) {
+
+//    date = read_from_csv_file
+//            ("/Users/corrado/hustle/src/table/tests/date.tbl", date_schema, BLOCK_SIZE);
+//
+//    write_to_file("/Users/corrado/hustle/src/table/tests/date.hsl",
+//                  *date);
+
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
+
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>
+            (hustle::operators::AggregateKernels::SUM, "date key", "selling season");
+
+    // Perform aggregate
+    auto aggregate = aggregate_op->run_operator({date});
+
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
+
+}
+
+
 TEST_F(SSBTestFixture, SSBQ1_1) {
 
 //    lineorder = read_from_csv_file
@@ -949,8 +976,16 @@ TEST_F(SSBTestFixture, SSBQ1_1) {
 //    write_to_file("/Users/corrado/hustle/src/table/tests/lineorder.hsl",
 //            *lineorder);
 
+    auto t11 = std::chrono::high_resolution_clock::now();
     lineorder = read_from_file
             ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+
+    auto t22 = std::chrono::high_resolution_clock::now();
+    std::cout << "READ FROM HUSTLE FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count
+                      () <<
+              std::endl;
 
 //    date = read_from_csv_file
 //            ("/Users/corrado/hustle/src/table/tests/date.tbl", date_schema, BLOCK_SIZE);
@@ -989,12 +1024,11 @@ TEST_F(SSBTestFixture, SSBQ1_1) {
             arrow::compute::Datum((int64_t) 25)
     );
 
-    // Combine select operators for lineorder into one composite operator.
+    // Combine select operators.
     auto lineorder_select_op_composite_1 =
             std::make_shared<hustle::operators::SelectComposite>
                     (lineorder_select_op_1, lineorder_select_op_2,
                      hustle::operators::FilterOperator::AND);
-
     auto lineorder_select_op_composite_2 =
             std::make_shared<hustle::operators::SelectComposite>
                     (lineorder_select_op_composite_1, lineorder_select_op_3,
@@ -1009,46 +1043,64 @@ TEST_F(SSBTestFixture, SSBQ1_1) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
-    // Perform selection on Date
-    auto date_2 = date_select_op->runOperator({date});
-    std::cout << "NUM DATE ROWS SELECTED = "
-              << date_2->get_num_rows() << std::endl;
-    // Perform selection on Lineorder
-    auto lineorder_2 = lineorder_select_op_composite_2->runOperator
-            ({lineorder});
-    std::cout << "NUM LINEORDER ROWS SELECTED = "
-              << lineorder_2->get_num_rows() << std::endl;
-    // Join the resulting Lineorder and Date tables
-    auto join_table = join_op->hash_join(lineorder_2, date_2);
+    arrow::compute::Datum left_selection =
+            lineorder_select_op_composite_2->get_filter(lineorder);
+    arrow::compute::Datum right_selection =
+            date_select_op->get_filter(date);
+
+    auto join_table = join_op->hash_join(
+            lineorder, left_selection,
+            date, right_selection);
+
     std::cout << "NUM ROWS JOINED = "
               << join_table->get_num_rows() << std::endl;
+
     // Create aggregate operator
     auto aggregate_op = std::make_shared<hustle::operators::Aggregate>
-            (hustle::operators::AggregateKernels::SUM, "revenue");
+            (hustle::operators::AggregateKernels::SUM, "revenue", "");
 
     // Perform aggregate over resulting join table
-    auto aggregate = aggregate_op->runOperator({join_table});
+    auto aggregate = aggregate_op->run_operator({join_table});
 
     // Print the result. The valid bit will be printed as the first column.
     if (aggregate != nullptr) aggregate->print();
 
     auto t2 = std::chrono::high_resolution_clock::now();
+
     std::cout << "QUERY EXECUTION TIME = " <<
               std::chrono::duration_cast<std::chrono::milliseconds>
-                      (t2-t1).count
-                      () <<
-              std::endl;
+                      (t2-t1).count() << std::endl;
 }
 
 
 TEST_F(SSBTestFixture, SSBQ1_2) {
 
-    lineorder = read_from_csv_file
-            ("/Users/corrado/hustle/src/table/tests/lineorder.tbl",
-             lineorder_schema, BLOCK_SIZE);
+//    lineorder = read_from_csv_file
+//            ("/Users/corrado/hustle/src/table/tests/lineorder.tbl",
+//                    lineorder_schema, BLOCK_SIZE);
+//
+//    write_to_file("/Users/corrado/hustle/src/table/tests/lineorder.hsl",
+//            *lineorder);
 
-    date = read_from_csv_file
-            ("/Users/corrado/hustle/src/table/tests/date.tbl", date_schema, BLOCK_SIZE);
+    auto t11 = std::chrono::high_resolution_clock::now();
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+
+    auto t22 = std::chrono::high_resolution_clock::now();
+    std::cout << "READ FROM HUSTLE FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count
+                      () <<
+              std::endl;
+
+//    date = read_from_csv_file
+//            ("/Users/corrado/hustle/src/table/tests/date.tbl", date_schema, BLOCK_SIZE);
+//
+//    write_to_file("/Users/corrado/hustle/src/table/tests/date.hsl",
+//                  *date);
+
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
     // Date.year month num = 199401
     auto date_select_op = std::make_shared<hustle::operators::Select>(
@@ -1111,30 +1163,28 @@ TEST_F(SSBTestFixture, SSBQ1_2) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
-    // Perform selection on Date
-    auto date_2 = date_select_op->runOperator({date});
-    // Perform selection on Lineorder
-    auto lineorder_2 = lineorder_select_op_composite_3->runOperator
-            ({lineorder});
-    std::cout << "NUM LINEORDER ROWS SELECTED = "
-    << lineorder_2->get_num_rows() << std::endl;
-    // Join the resulting Lineorder and Date tables
-    auto join_table = join_op->hash_join(lineorder_2, date_2);
+    arrow::compute::Datum left_selection =
+            lineorder_select_op_composite_3->get_filter(lineorder);
+    arrow::compute::Datum right_selection =
+            date_select_op->get_filter(date);
+
+    auto join_table = join_op->hash_join(
+            lineorder, left_selection,
+            date, right_selection);
 
     // Create aggregate operator
     auto aggregate_op = std::make_shared<hustle::operators::Aggregate>
-            (hustle::operators::AggregateKernels::SUM, "revenue");
+            (hustle::operators::AggregateKernels::SUM, "revenue", "");
 
     // Perform aggregate over resulting join table
-    auto aggregate = aggregate_op->runOperator({join_table});
+    auto aggregate = aggregate_op->run_operator({join_table});
 
     // Print the result. The valid bit will be printed as the first column.
     if (aggregate != nullptr) aggregate->print();
 
     auto t2 = std::chrono::high_resolution_clock::now();
+
     std::cout << "QUERY EXECUTION TIME = " <<
               std::chrono::duration_cast<std::chrono::milliseconds>
-                      (t2-t1).count
-                      () <<
-              std::endl;
+                      (t2-t1).count() << std::endl;
 }

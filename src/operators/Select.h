@@ -26,11 +26,18 @@ public:
         );
 
     // Operator.h
-    std::shared_ptr<Table> runOperator
+    std::shared_ptr<Table> run_operator
     (std::vector<std::shared_ptr<Table>> tables) override;
+
+    std::shared_ptr<Table> materialize
+            (std::vector<std::shared_ptr<Table>> tables,
+                    arrow::compute::Datum filter);
 
     arrow::compute::Datum get_filter
             (std::shared_ptr<Block> block) override;
+
+    arrow::compute::Datum get_filter
+            (std::shared_ptr<Table> table);
 
 
 private:
@@ -47,11 +54,21 @@ public:
         FilterOperator filter_operator
     );
 
-    std::shared_ptr<Table> runOperator
+    std::shared_ptr<Table> run_operator
             (std::vector<std::shared_ptr<Table>> tables) override;
+
+    std::shared_ptr<Table> materialize
+            (std::vector<std::shared_ptr<Table>> tables,
+             arrow::compute::Datum filter);
 
     arrow::compute::Datum get_filter
             (std::shared_ptr<Block> block) override;
+
+//    std::vector<arrow::compute::Datum> get_filter
+//            (std::shared_ptr<Table> table);
+
+    arrow::compute::Datum get_filter
+            (std::shared_ptr<Table> table);
 
 private:
     std::shared_ptr<SelectOperator> left_child_;
