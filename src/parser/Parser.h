@@ -31,7 +31,7 @@ class Parser {
    * @param hustleDB: input hustle database
    */
   void parse(const std::string &sql, hustle::HustleDB &hustleDB) {
-    check_explain(sql);
+    checkExplain(sql);
 
     // TODO(Lichengxi): enable concurrency, add locks
     hustleDB.getPlan(sql);
@@ -54,7 +54,7 @@ class Parser {
    * Function to return the parse tree
    * @return the parse tree
    */
-  std::shared_ptr<ParseTree> get_parse_tree() {
+  std::shared_ptr<ParseTree> getParseTree() {
     return parse_tree_;
   }
 
@@ -62,9 +62,6 @@ class Parser {
    * Move select predicates from loop_pred to other_pred
    */
   void preprocessing() {
-
-
-
     for (auto &loop_pred : parse_tree_->loop_pred) {
       for (auto it = loop_pred->predicates.begin();
            it != loop_pred->predicates.end();) {
@@ -83,7 +80,7 @@ class Parser {
    * @param indent: indentation
    * @return serialized json string
    */
-  std::string to_string(int indent) {
+  std::string toString(int indent) {
     json j = parse_tree_;
     return j.dump(indent);
   }
@@ -93,7 +90,7 @@ class Parser {
    * check if the sql query starts with an "EXPLAIN"
    * @param sql: input sql query string
    */
-  static void check_explain(const std::string &sql) {
+  static void checkExplain(const std::string &sql) {
     if (!absl::StartsWithIgnoreCase(sql, "EXPLAIN")) {
       std::cerr << "Not starting with EXPLAIN keyword" << std::endl;
       exit(-1);

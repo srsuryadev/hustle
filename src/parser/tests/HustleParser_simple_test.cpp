@@ -60,7 +60,7 @@ TEST_F(ParserSimpleTest, test1) {
 
   auto parser = std::make_shared<hustle::parser::Parser>();
   parser->parse(query, hustleDB);
-  auto out = parser->to_string(4);
+  auto out = parser->toString(4);
 
   /// build validation parse tree
   auto c00 = std::make_shared<ColumnReference>("c1", 0, 0);
@@ -98,7 +98,7 @@ TEST_F(ParserSimpleTest, test2) {
 
   auto parser = std::make_shared<hustle::parser::Parser>();
   parser->parse(query, hustleDB);
-  auto out = parser->to_string(4);
+  auto out = parser->toString(4);
   // std::cout << out << std::endl;
 
   /// build validation parse tree

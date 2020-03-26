@@ -11,7 +11,7 @@
 namespace hustle {
 namespace operators {
 
-class SelectOperator : Operator {
+class SelectOperator : public Operator {
 public:
     virtual arrow::compute::Datum get_filter(std::shared_ptr<Block> block) = 0;
 };

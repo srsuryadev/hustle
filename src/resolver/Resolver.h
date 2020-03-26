@@ -14,6 +14,9 @@ namespace resolver {
 
 class Resolver {
  public:
+
+  Resolver(hustle::catalog::Catalog *catalog) : catalog_(catalog) {}
+
   /**
    * This function takes as input a parse tree from the parser, builds the
    * plan from bottom to top given the predicates and expressions preserved
@@ -34,13 +37,12 @@ class Resolver {
    * @param parse_tree: input parse tree from parser
    * @param hustleDB: input hustle database
    */
-  void resolve(const std::shared_ptr<hustle::parser::ParseTree> &parse_tree,
-               hustle::catalog::Catalog *catalog) {
+  void resolve(const std::shared_ptr<hustle::parser::ParseTree> &parse_tree) {
     // initialize the maps given parse_tree->tableList
     for (int i = 0; i < parse_tree->tableList.size(); i++) {
       std::string name = parse_tree->tableList[i];
-      map_vir_to_real[i] = catalog->getTableIdbyName(name);
-      map_real_to_vir[catalog->getTableIdbyName(name)] = i;
+      map_vir_to_real[i] = catalog_->getTableIdbyName(name);
+      map_real_to_vir[catalog_->getTableIdbyName(name)] = i;
     }
 
     // resolve TableReference
@@ -55,12 +57,12 @@ class Resolver {
     // resolve Select
     for (auto &pred : parse_tree->other_pred) {
       if (pred->type == +ExprType::Comparative) {
-        auto e = resolve_Comparative(
+        auto e = resolveComparative(
             std::dynamic_pointer_cast<hustle::parser::Comparative>(pred));
         select_operators[map_real_to_vir[e->left->i_table]]->filter.push_back(e);
       } else { // pred->type == +ExprType::Disjunctive
         assert(pred->type == +ExprType::Disjunctive);
-        auto e = resolve_Disjunctive(
+        auto e = resolveDisjunctive(
             std::dynamic_pointer_cast<hustle::parser::Disjunctive>(pred));
         select_operators[map_real_to_vir[e->i_table]]->filter.push_back(e);
       }
@@ -74,7 +76,7 @@ class Resolver {
       } else {
         std::vector<std::shared_ptr<Comparative>> join_preds;
         for (auto &pred : lpred->predicates) {
-          join_preds.push_back(resolve_Comparative(pred));
+          join_preds.push_back(resolveComparative(pred));
         }
         auto right = std::move(select_operators[lpred->fromtable]);
         root = std::make_shared<Join>(
@@ -89,7 +91,7 @@ class Resolver {
     if (!parse_tree->group_by.empty()) {
       std::vector<std::shared_ptr<ColumnReference>> groupby_cols;
       for (auto &col : parse_tree->group_by) {
-        groupby_cols.push_back(resolve_ColumnReference(col));
+        groupby_cols.push_back(resolveColumnReference(col));
       }
       root = std::make_shared<GroupBy>(
           std::move(root),
@@ -102,7 +104,7 @@ class Resolver {
       std::vector<std::string> proj_names;
 
       for (auto &proj : parse_tree->project) {
-        proj_exprs.push_back(resolve_Expr(proj->expr));
+        proj_exprs.push_back(resolveExpr(proj->expr));
         proj_names.push_back(proj->proj_name);
       }
       root = std::make_shared<Project>(std::move(root),
@@ -116,7 +118,7 @@ class Resolver {
       std::vector<OrderByDirection> orders;
 
       for (auto &orderby : parse_tree->order_by) {
-        orderby_cols.push_back(resolve_Expr(orderby->expr));
+        orderby_cols.push_back(resolveExpr(orderby->expr));
         orders.push_back(orderby->order);
       }
       root = std::make_shared<OrderBy>(std::move(root),
@@ -130,35 +132,35 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::Expr
    */
-  std::shared_ptr<Expr> resolve_Expr(
+  std::shared_ptr<Expr> resolveExpr(
       const std::shared_ptr<hustle::parser::Expr> &expr) {
     switch (expr->type) {
       case ExprType::ColumnReference:
-        return resolve_ColumnReference(
+        return resolveColumnReference(
             std::dynamic_pointer_cast<hustle::parser::ColumnReference>(expr));
 
       case ExprType::IntLiteral:
-        return resolve_IntLiteral(
+        return resolveIntLiteral(
             std::dynamic_pointer_cast<hustle::parser::IntLiteral>(expr));
 
       case ExprType::StrLiteral:
-        return resolve_StrLiteral(
+        return resolveStrLiteral(
             std::dynamic_pointer_cast<hustle::parser::StrLiteral>(expr));
 
       case ExprType::Comparative:
-        return resolve_Comparative(
+        return resolveComparative(
             std::dynamic_pointer_cast<hustle::parser::Comparative>(expr));
 
       case ExprType::Disjunctive:
-        return resolve_Disjunctive(
+        return resolveDisjunctive(
             std::dynamic_pointer_cast<hustle::parser::Disjunctive>(expr));
 
       case ExprType::Arithmetic:
-        return resolve_Arithmetic(
+        return resolveArithmetic(
             std::dynamic_pointer_cast<hustle::parser::Arithmetic>(expr));
 
       case ExprType::AggFunc:
-        return resolve_AggFunc(
+        return resolveAggFunc(
             std::dynamic_pointer_cast<hustle::parser::AggFunc>(expr));
 
       default:
@@ -169,18 +171,18 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::Comparative
    */
-  std::shared_ptr<Comparative> resolve_Comparative(
+  std::shared_ptr<Comparative> resolveComparative(
       const std::shared_ptr<hustle::parser::Comparative> &expr) {
-    return std::make_shared<Comparative>(resolve_ColumnReference(
+    return std::make_shared<Comparative>(resolveColumnReference(
         std::dynamic_pointer_cast<hustle::parser::ColumnReference>(expr->left)),
                                          expr->op,
-                                         resolve_Expr(expr->right));
+                                         resolveExpr(expr->right));
   }
 
   /**
    * Function to resolve hustle::parser::ColumnReference
    */
-  std::shared_ptr<ColumnReference> resolve_ColumnReference(
+  std::shared_ptr<ColumnReference> resolveColumnReference(
       const std::shared_ptr<hustle::parser::ColumnReference> &expr) {
     return std::make_shared<ColumnReference>(expr->column_name,
                                              map_vir_to_real[expr->i_table],
@@ -190,7 +192,7 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::IntLiteral
    */
-  std::shared_ptr<IntLiteral> resolve_IntLiteral(
+  std::shared_ptr<IntLiteral> resolveIntLiteral(
       const std::shared_ptr<hustle::parser::IntLiteral> &expr) {
     return std::make_shared<IntLiteral>(expr->value);
   }
@@ -198,7 +200,7 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::StrLiteral
    */
-  std::shared_ptr<StrLiteral> resolve_StrLiteral(
+  std::shared_ptr<StrLiteral> resolveStrLiteral(
       const std::shared_ptr<hustle::parser::StrLiteral> &expr) {
     return std::make_shared<StrLiteral>(expr->value);
   }
@@ -206,11 +208,11 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::Disjunctive
    */
-  std::shared_ptr<Disjunctive> resolve_Disjunctive(
+  std::shared_ptr<Disjunctive> resolveDisjunctive(
       const std::shared_ptr<hustle::parser::Disjunctive> &expr) {
-    auto left = resolve_Comparative(
+    auto left = resolveComparative(
         std::dynamic_pointer_cast<hustle::parser::Comparative>(expr->left));
-    auto right = resolve_Comparative(
+    auto right = resolveComparative(
         std::dynamic_pointer_cast<hustle::parser::Comparative>(expr->right));
     int i_table = left->left->i_table;
 
@@ -225,31 +227,32 @@ class Resolver {
   /**
    * Function to resolve hustle::parser::Arithmetic
    */
-  std::shared_ptr<Arithmetic> resolve_Arithmetic(
+  std::shared_ptr<Arithmetic> resolveArithmetic(
       const std::shared_ptr<hustle::parser::Arithmetic> &expr) {
-    return std::make_shared<Arithmetic>(resolve_Expr(expr->left),
+    return std::make_shared<Arithmetic>(resolveExpr(expr->left),
                                         expr->op,
-                                        resolve_Expr(expr->right));
+                                        resolveExpr(expr->right));
   }
 
   /**
    * Function to resolve hustle::parser::AggFunc
    */
-  std::shared_ptr<AggFunc> resolve_AggFunc(
+  std::shared_ptr<AggFunc> resolveAggFunc(
       const std::shared_ptr<hustle::parser::AggFunc> &expr) {
     return std::make_shared<AggFunc>(expr->func,
-                                     resolve_Expr(expr->expr));
+                                     resolveExpr(expr->expr));
   }
 
   /**
    * Function to serialize the parse tree
    */
-  std::string to_string(int indent) {
+  std::string toString(int indent) {
     json j = plan_;
     return j.dump(indent);
   }
 
  private:
+  hustle::catalog::Catalog *catalog_;
   std::shared_ptr<Plan> plan_;
   std::map<int, int> map_vir_to_real; // matching from virtual to real table id
   std::map<int, int> map_real_to_vir; // matching from real to virtual table id
