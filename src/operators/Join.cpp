@@ -44,7 +44,6 @@ std::shared_ptr<Table> Join::hash_join(
 
     std::vector<std::shared_ptr<Block>> out_blocks;
 
-
     auto right_join_col = right_table->get_column_by_name
                 (right_join_column_name_);
 

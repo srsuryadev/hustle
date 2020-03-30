@@ -9,17 +9,28 @@ target_link_libraries(resolver
         parser
 )
 
-#add_executable(hustle_parser_simple_test "tests/HustleParser_simple_test.cpp")
-#target_link_libraries(hustle_parser_simple_test
-#        gtest
-#        gtest_main
-#        gmock
-#        catalog
-#        sqlite3
-#        hustleDB
+#target_include_directories(resolver PUBLIC ${ARROW_INCLUDE_DIR})
+#target_link_libraries(resolver PUBLIC
+#        operators
+#        table
+#        ${ARROW_SHARED_LIB}
 #        )
-#add_test(HustleParser_test hustle_parser_simple_test)
-#
+
+
+add_executable(hustle_resolver_simple_test "tests/HustleResolver_simple_test.cpp")
+target_link_libraries(hustle_resolver_simple_test
+        gtest
+        gtest_main
+        gmock
+        catalog
+        sqlite3
+        hustleDB
+        table
+        operators
+        )
+add_test(HustleResolver_test hustle_resolver_simple_test)
+
+
 add_executable(hustle_resolver_ssb_test "tests/HustleResolver_ssb_test.cpp")
 target_link_libraries(hustle_resolver_ssb_test
         gtest
@@ -28,5 +39,7 @@ target_link_libraries(hustle_resolver_ssb_test
         catalog
         sqlite3
         hustleDB
+        table
+        operators
         )
 add_test(HustleResolver_test hustle_resolver_ssb_test)

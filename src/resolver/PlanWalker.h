@@ -1,6 +1,8 @@
 #ifndef HUSTLE_SRC_RESOLVER_PLANWALKER_H_
 #define HUSTLE_SRC_RESOLVER_PLANWALKER_H_
 
+#include <filesystem>
+
 #include <table/table.h>
 #include <table/util.h>
 #include <operators/Select.h>
@@ -26,33 +28,39 @@ class PlanWalker {
     }
   }
 
-  std::shared_ptr<Table> walkQuery(
+  static std::shared_ptr<Table> walkQuery(
       const std::shared_ptr<QueryOperator>& query_operator) {
     switch (query_operator->type) {
       case types::QueryOperatorType::TableReference: {
         auto curr = std::dynamic_pointer_cast<TableReference>(query_operator);
 
         // TODO: Link to catalog
-        std::string filename = std::to_string(curr->i_table) + curr->table_name;
-        return read_from_file(filename.c_str());
+        std::string filename = curr->table_name + ".hsl";
+        // return read_from_file(filename.c_str());
+
+        std::cout << "read_from_file" << filename << std::endl;
+        return nullptr;
       }
       case types::QueryOperatorType::Select: {
         auto curr = std::dynamic_pointer_cast<Select>(query_operator);
-        auto table = walkQuery(curr->input);
 
-        std::shared_ptr<hustle::operators::SelectOperator> select = nullptr;
+        std::shared_ptr<hustle::operators::SelectOperator> select;
         for (auto &filter : curr->filter) {
           if (select == nullptr) {
-            select = walkSelectFilter(filter);
+            select = walkSelect(filter);
           } else {
-            auto curr_select = walkSelectFilter(filter);
+            auto curr_select = walkSelect(filter);
             select = std::make_shared<hustle::operators::SelectComposite>(
                 std::move(select),
                 std::move(curr_select),
                 hustle::operators::FilterOperator::AND);
           }
         }
-        return select->runOperator({table});
+
+        auto table = walkQuery(curr->input);
+        // return select->run_operator({table});
+        std::cout << "select->run_operator({table})" << std::endl;
+        return nullptr;
       }
       case types::QueryOperatorType::Project: {
         auto curr = std::dynamic_pointer_cast<Project>(query_operator);
@@ -60,7 +68,8 @@ class PlanWalker {
 
         // TODO: Implement hustle::operators::Project
         // auto project = std::make_shared<hustle::operators::Project>();
-        return project->runOperator(table);
+        // return project->run_operator(table);
+        return nullptr;
       }
       case types::QueryOperatorType::Join: {
         auto curr = std::dynamic_pointer_cast<Join>(query_operator);
@@ -68,15 +77,16 @@ class PlanWalker {
         auto right = walkQuery(curr->right_input);
 
         auto join = walkJoin(curr->join_pred[0]); // assume only one join pred
-        return join->hash_join(left, right);
+        // return join->hash_join(left, arrow::compute::Datum(), right, arrow::compute::Datum());
+        std::cout << "join->hash_join" << std::endl;
+        return nullptr;
       }
-      case types::QueryOperatorType::GroupBy: {
-        auto curr = std::dynamic_pointer_cast<GroupBy>(query_operator);
+      case types::QueryOperatorType::Aggregate: {
+        auto curr = std::dynamic_pointer_cast<Aggregate>(query_operator);
         auto table = walkQuery(curr->input);
-
-        // TODO: Implement hustle::operators::GroupBy
-        // auto groupby = std::make_shared<hustle::operators::GroupBy>();
-        // return groupby->runOperator(table);
+        auto aggregate = walkAggregate(curr->aggregate_func, curr->groupby_cols);
+        // return aggregate->run_operator({table});
+        std::cout << "aggregate->run_operator" << std::endl;
         return nullptr;
       }
       case types::QueryOperatorType::OrderBy: {
@@ -85,20 +95,20 @@ class PlanWalker {
 
         // TODO: Implement hustle::operators::OrderBy
         // auto orderby = std::make_shared<hustle::operators::OrderBy>();
-        // return orderby->runOperator(table);
+        // return orderby->run_operator(table);
         return nullptr;
       }
     }
   }
 
-  static std::shared_ptr<hustle::operators::SelectOperator> walkSelectFilter(
+  static std::shared_ptr<hustle::operators::SelectOperator> walkSelect(
       const std::shared_ptr<Expr>& expr) {
     switch (expr->type) {
       case ExprType::Disjunctive: {
         auto curr = std::dynamic_pointer_cast<Disjunctive>(expr);
         return std::make_shared<hustle::operators::SelectComposite>(
-            walkSelectFilter(curr->exprs[0]),
-            walkSelectFilter(curr->exprs[1]),
+            walkSelect(curr->exprs[0]),
+            walkSelect(curr->exprs[1]),
             hustle::operators::FilterOperator::OR);
       }
       case ExprType::Comparative: {
@@ -110,19 +120,38 @@ class PlanWalker {
       }
       default: {
         std::cerr << "ExprType::" << expr->type._to_string()
-                  << " not supported in walkSelectFilter" << std::endl;
+                  << " not supported in walkSelect" << std::endl;
         exit(-1);
       }
     }
   }
 
   static std::shared_ptr<hustle::operators::Join> walkJoin(
-      std::shared_ptr<Comparative> comparative) {
+      const std::shared_ptr<Comparative>& comparative) {
     assert(comparative->right->type == +ExprType::ColumnReference);
     return std::make_shared<hustle::operators::Join>(
         walkColumnReference(comparative->left),
         walkColumnReference(
             std::dynamic_pointer_cast<ColumnReference>(comparative->right)));
+  }
+
+  static std::shared_ptr<hustle::operators::Aggregate> walkAggregate(
+      const std::shared_ptr<AggFunc>& aggregate_func,
+      const std::vector<std::shared_ptr<ColumnReference>>& groupby_cols) {
+
+    std::vector<std::shared_ptr<arrow::Field>> aggregate_fields = {
+        arrow::field(walkColumnReference(std::dynamic_pointer_cast<
+                         ColumnReference>(aggregate_func->expr)),
+                     arrow::utf8())
+    };
+    // walkColumnReference(groupby_cols[0])
+    std::vector<std::shared_ptr<arrow::Field>> group_by_fields = {};
+    std::vector<std::shared_ptr<arrow::Field>> order_by_fields = {};
+    return std::make_shared<hustle::operators::Aggregate>(
+        walkAggFuncType(aggregate_func->func),
+        aggregate_fields,
+        group_by_fields,
+        order_by_fields);
   }
 
   static std::string walkColumnReference(
@@ -163,6 +192,15 @@ class PlanWalker {
         return arrow::compute::CompareOperator::LESS;
       case ComparativeType::GE:
         return arrow::compute::CompareOperator::GREATER_EQUAL;
+    }
+  }
+
+  static hustle::operators::AggregateKernels walkAggFuncType(
+      AggFuncType agg_func_type) {
+    switch (agg_func_type) {
+      case AggFuncType::COUNT: return hustle::operators::AggregateKernels::COUNT;
+      case AggFuncType::AVG: return hustle::operators::AggregateKernels::MEAN;
+      case AggFuncType::SUM: return hustle::operators::AggregateKernels::SUM;
     }
   }
 

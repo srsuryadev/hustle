@@ -110,7 +110,7 @@ class AggFunc : public Expr {
 
 /**
  * abstract class: QueryOperator
- * derived class: TableReference, Select, Project, Join, GroupBy, OrderBy
+ * derived class: TableReference, Select, Project, Join, Aggregate, OrderBy
  */
 class QueryOperator {
  public:
@@ -178,15 +178,18 @@ class Join : public QueryOperator {
   std::vector<std::shared_ptr<Comparative>> join_pred;
 };
 
-class GroupBy : public QueryOperator {
+class Aggregate : public QueryOperator {
  public:
-  GroupBy(std::shared_ptr<QueryOperator> _input,
-          std::vector<std::shared_ptr<ColumnReference>> _cols)
-      : QueryOperator(QueryOperatorType::GroupBy),
+  Aggregate(std::shared_ptr<QueryOperator> _input,
+            std::shared_ptr<AggFunc> _aggregate_func,
+            std::vector<std::shared_ptr<ColumnReference>> _groupby_cols)
+      : QueryOperator(QueryOperatorType::Aggregate),
         input(std::move(_input)),
-        groupby_cols(std::move(_cols)) {}
+        aggregate_func(std::move(_aggregate_func)),
+        groupby_cols(std::move(_groupby_cols)) {}
 
   std::shared_ptr<QueryOperator> input;
+  std::shared_ptr<AggFunc> aggregate_func;
   std::vector<std::shared_ptr<ColumnReference>> groupby_cols;
 };
 
@@ -245,7 +248,7 @@ void to_json(json &j, const std::shared_ptr<TableReference> &table_reference);
 void to_json(json &j, const std::shared_ptr<Select> &select);
 void to_json(json &j, const std::shared_ptr<Project> &project);
 void to_json(json &j, const std::shared_ptr<Join> &join);
-void to_json(json &j, const std::shared_ptr<GroupBy> &groupby);
+void to_json(json &j, const std::shared_ptr<Aggregate> &aggregate);
 void to_json(json &j, const std::shared_ptr<OrderBy> &orderby);
 
 void to_json(json &j, const std::shared_ptr<Expr> &expr);
@@ -290,8 +293,8 @@ void to_json(json &j, const std::shared_ptr<QueryOperator> &query_operator) {
     case QueryOperatorType::Join :
       j = json(std::dynamic_pointer_cast<Join>(query_operator));
       break;
-    case QueryOperatorType::GroupBy :
-      j = json(std::dynamic_pointer_cast<GroupBy>(query_operator));
+    case QueryOperatorType::Aggregate :
+      j = json(std::dynamic_pointer_cast<Aggregate>(query_operator));
       break;
     case QueryOperatorType::OrderBy :
       j = json(std::dynamic_pointer_cast<OrderBy>(query_operator));
@@ -332,12 +335,13 @@ void to_json(json &j, const std::shared_ptr<Join> &join) {
           {"join_pred", join->join_pred},
       };
 }
-void to_json(json &j, const std::shared_ptr<GroupBy> &groupby) {
+void to_json(json &j, const std::shared_ptr<Aggregate> &aggregate) {
   j = json
       {
-          {"type", groupby->type._to_string()},
-          {"input", groupby->input},
-          {"groupby_cols", groupby->groupby_cols},
+          {"type", aggregate->type._to_string()},
+          {"input", aggregate->input},
+          {"aggregate_func", aggregate->aggregate_func},
+          {"groupby_cols", aggregate->groupby_cols},
       };
 }
 void to_json(json &j, const std::shared_ptr<OrderBy> &orderby) {
@@ -426,6 +430,7 @@ void to_json(json &j, const std::shared_ptr<Disjunctive> &disjunctive) {
 void to_json(json &j, const std::shared_ptr<Arithmetic> &arithmetic) {
   j = json
       {
+          {"type", arithmetic->type._to_string()},
           {"left", arithmetic->left},
           {"op", arithmetic->op._to_string()},
           {"right", arithmetic->right},
@@ -434,6 +439,7 @@ void to_json(json &j, const std::shared_ptr<Arithmetic> &arithmetic) {
 void to_json(json &j, const std::shared_ptr<AggFunc> &aggfunc) {
   j = json
       {
+          {"type", aggfunc->type._to_string()},
           {"func", aggfunc->func._to_string()},
           {"expr", aggfunc->expr}
       };

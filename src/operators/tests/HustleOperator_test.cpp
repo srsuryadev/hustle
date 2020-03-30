@@ -1123,16 +1123,13 @@ TEST_F(SSBTestFixture, SSBQ1_1) {
 
 TEST_F(SSBTestFixture, SSBQ1_2) {
 
-//    lineorder = read_from_csv_file
-//            ("/Users/corrado/hustle/src/table/tests/lineorder.tbl",
-//                    lineorder_schema, BLOCK_SIZE);
-//
-//    write_to_file("/Users/corrado/hustle/src/table/tests/lineorder.hsl",
-//            *lineorder);
+   lineorder = read_from_csv_file
+           ("/Users/lichengxihuang/Documents/hustle/lineorder.csv", lineorder_schema, BLOCK_SIZE);
+
+   write_to_file("lineorder.hsl", *lineorder);
 
     auto t11 = std::chrono::high_resolution_clock::now();
-    lineorder = read_from_file
-            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file("lineorder.hsl");
 
     auto t22 = std::chrono::high_resolution_clock::now();
     std::cout << "READ FROM HUSTLE FILE TIME = " <<
@@ -1141,14 +1138,12 @@ TEST_F(SSBTestFixture, SSBQ1_2) {
                       () <<
               std::endl;
 
-//    date = read_from_csv_file
-//            ("/Users/corrado/hustle/src/table/tests/date.tbl", date_schema, BLOCK_SIZE);
-//
-//    write_to_file("/Users/corrado/hustle/src/table/tests/date.hsl",
-//                  *date);
+   date = read_from_csv_file
+           ("/Users/lichengxihuang/Documents/hustle/ddate.csv", date_schema, BLOCK_SIZE);
 
-    date = read_from_file
-            ("/Users/corrado/hustle/src/table/tests/date.hsl");
+   write_to_file("date.hsl", *date);
+
+    date = read_from_file("date.hsl");
 
     // Date.year month num = 199401
     auto date_select_op = std::make_shared<hustle::operators::Select>(

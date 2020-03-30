@@ -188,12 +188,14 @@ class ParseTree {
             std::vector<std::shared_ptr<Project>> _project,
             std::vector<std::shared_ptr<LoopPredicate>> _loop_pred,
             std::vector<std::shared_ptr<Expr>> _other_pred,
+            std::vector<std::shared_ptr<AggFunc>> _aggregate,
             std::vector<std::shared_ptr<ColumnReference>> _group_by,
             std::vector<std::shared_ptr<OrderBy>> _order_by
   ) : tableList(std::move(_tableList)),
       project(std::move(_project)),
       loop_pred(std::move(_loop_pred)),
       other_pred(std::move(_other_pred)),
+      aggregate(std::move(_aggregate)),
       group_by(std::move(_group_by)),
       order_by(std::move(_order_by)) {}
 
@@ -201,6 +203,7 @@ class ParseTree {
   std::vector<std::shared_ptr<Project>> project;
   std::vector<std::shared_ptr<LoopPredicate>> loop_pred;
   std::vector<std::shared_ptr<Expr>> other_pred;
+  std::vector<std::shared_ptr<AggFunc>> aggregate;
   std::vector<std::shared_ptr<ColumnReference>> group_by;
   std::vector<std::shared_ptr<OrderBy>> order_by;
 };
@@ -242,6 +245,7 @@ void from_json(const json &j, std::shared_ptr<ParseTree> &parse_tree) {
       j.at("project").get<std::vector<std::shared_ptr<Project>>>(),
       j.at("loop_pred").get<std::vector<std::shared_ptr<LoopPredicate>>>(),
       j.at("other_pred").get<std::vector<std::shared_ptr<Expr>>>(),
+      j.at("aggregate").get<std::vector<std::shared_ptr<AggFunc>>>(),
       j.at("group_by").get<std::vector<std::shared_ptr<ColumnReference>>>(),
       j.at("order_by").get<std::vector<std::shared_ptr<OrderBy>>>());
 }
@@ -252,6 +256,7 @@ void to_json(json &j, const std::shared_ptr<ParseTree> &parse_tree) {
           {"project", parse_tree->project},
           {"loop_pred", parse_tree->loop_pred},
           {"other_pred", parse_tree->other_pred},
+          {"aggregate", parse_tree->aggregate},
           {"group_by", parse_tree->group_by},
           {"order_by", parse_tree->order_by}
       };

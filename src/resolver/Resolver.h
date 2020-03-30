@@ -29,9 +29,9 @@ class Resolver {
    * the select predicates down to the TableReference objects as much as
    * possible. The Join objects are then built on top of these Select objects
    * by traversing parse_tree->loop_pred. The topmost Join object is then
-   * captured as an input to the GroupBy, Project, and OrderBy.
+   * captured as an input to the Aggregate, Project, and OrderBy.
    *
-   * The resolving order is: TableReference, Select, Join, GroupBy, Project
+   * The resolving order is: TableReference, Select, Join, Aggregate, Project
    * and OrderBy.
    *
    * @param parse_tree: input parse tree from parser
@@ -87,15 +87,22 @@ class Resolver {
       }
     }
 
-    // resolve GroupBy
-    if (!parse_tree->group_by.empty()) {
+    // resolve Aggregate
+    if (!parse_tree->aggregate.empty()) {
+      // there can be at most one aggregate function
+      auto aggregate_func = resolveAggFunc(parse_tree->aggregate[0]);
+
       std::vector<std::shared_ptr<ColumnReference>> groupby_cols;
       for (auto &col : parse_tree->group_by) {
         groupby_cols.push_back(resolveColumnReference(col));
       }
-      root = std::make_shared<GroupBy>(
+      root = std::make_shared<Aggregate>(
           std::move(root),
+          std::move(aggregate_func),
           std::move(groupby_cols));
+    } else {
+      // if no aggragate, there must be no groupby
+      assert(parse_tree->group_by.empty());
     }
 
     // resolve Project
@@ -241,6 +248,14 @@ class Resolver {
       const std::shared_ptr<hustle::parser::AggFunc> &expr) {
     return std::make_shared<AggFunc>(expr->func,
                                      resolveExpr(expr->expr));
+  }
+
+  /**
+   * Function to return the plan
+   * @return the plan
+   */
+  std::shared_ptr<Plan> getPlan() {
+    return plan_;
   }
 
   /**

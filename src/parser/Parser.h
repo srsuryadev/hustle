@@ -11,6 +11,7 @@ char tableList[SERIAL_BLOCK_SIZE];
 char project[SERIAL_BLOCK_SIZE];
 char loopPred[SERIAL_BLOCK_SIZE];
 char otherPred[SERIAL_BLOCK_SIZE];
+char aggregate[SERIAL_BLOCK_SIZE];
 char groupBy[SERIAL_BLOCK_SIZE];
 char orderBy[SERIAL_BLOCK_SIZE];
 char *currPos = nullptr;
@@ -24,7 +25,7 @@ class Parser {
    * This function takes as input an "EXPLAIN" sql query as well as the
    * hustleDB, calls the SQLite3's library function through sqlite3_exec,
    * extracts the optimized parse tree which maintains the nested loop
-   * order as well as the predicates. Project, GroupBy and OrderBy are
+   * order as well as the predicates. Project, Aggregate and OrderBy are
    * also perserved in the parse tree.
    *
    * @param sql: input sql query
@@ -41,6 +42,7 @@ class Parser {
         "], \"project\": [" + std::string(project) +
         "], \"loop_pred\": [" + std::string(loopPred) +
         "], \"other_pred\": [" + std::string(otherPred) +
+        "], \"aggregate\": [" + std::string(aggregate) +
         "], \"group_by\": [" + std::string(groupBy) +
         "], \"order_by\": [" + std::string(orderBy) +
         "]}";

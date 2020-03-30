@@ -246,7 +246,7 @@ class ParserSSBTest : public Test {
 TEST_F(ParserSSBTest, ssb_q1) {
   hustle::HustleDB hustleDB("db_directory");
 
-  std::string query = "EXPLAIN QUERY PLAN select lo_extendedprice, sum(lo_extendedprice * lo_discount) as revenue "
+  std::string query = "EXPLAIN QUERY PLAN select sum(lo_extendedprice * lo_discount) as revenue "
                       "from lineorder, ddate "
                       "where lo_orderdate = d_datekey and d_year = 1993 and lo_discount between 1 and 3 and lo_quantity < 25;";
 

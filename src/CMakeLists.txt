@@ -3,7 +3,7 @@ add_executable(
         main.cpp
 )
 
-target_link_libraries(hustle_main hustleDB catalog table)
+target_link_libraries(hustle_main hustleDB catalog table operators)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(Arrow REQUIRED)

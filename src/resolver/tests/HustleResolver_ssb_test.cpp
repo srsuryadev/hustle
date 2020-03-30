@@ -1,5 +1,4 @@
 #include <iostream>
-#include <resolver/Resolver.h>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "sqlite3/sqlite3.h"
@@ -7,6 +6,7 @@
 #include "api/HustleDB.h"
 #include "catalog/Catalog.h"
 #include "parser/Parser.h"
+#include <resolver/PlanWalker.h>
 
 using namespace testing;
 using namespace hustle::parser;
@@ -246,6 +246,151 @@ class ResolverSSBTest : public Test {
 
 
 TEST_F(ResolverSSBTest, ssb_qtemp) {
+
+  arrow::Status status;
+
+  std::shared_ptr<arrow::Field> field1 = arrow::field("lo_orderkey", arrow::int64());
+  std::shared_ptr<arrow::Field> field2 = arrow::field("lo_linenumber", arrow::int64());
+  std::shared_ptr<arrow::Field> field3 = arrow::field("lo_custkey", arrow::int64());
+  std::shared_ptr<arrow::Field> field4 = arrow::field("lo_partkey", arrow::int64());
+  std::shared_ptr<arrow::Field> field5 = arrow::field("lo_suppkey", arrow::int64());
+  std::shared_ptr<arrow::Field> field6 = arrow::field("lo_orderdate", arrow::int64());
+  std::shared_ptr<arrow::Field> field7 = arrow::field("lo_orderpriority", arrow::utf8());
+  std::shared_ptr<arrow::Field> field8 = arrow::field("lo_shippriority", arrow::utf8());
+  std::shared_ptr<arrow::Field> field9 = arrow::field("lo_quantity", arrow::int64());
+  std::shared_ptr<arrow::Field> field10 = arrow::field("lo_extendedprice",  arrow::int64());
+  std::shared_ptr<arrow::Field> field11 = arrow::field("lo_ordertotalprice",  arrow::int64());
+  std::shared_ptr<arrow::Field> field12 = arrow::field("lo_discount",  arrow::int64());
+  std::shared_ptr<arrow::Field> field13 = arrow::field("lo_revenue",  arrow::int64());
+  std::shared_ptr<arrow::Field> field14 = arrow::field("lo_supplycost",  arrow::int64());
+  std::shared_ptr<arrow::Field> field15 = arrow::field("lo_tax",  arrow::int64());
+  std::shared_ptr<arrow::Field> field16 = arrow::field("lo_commitdate",  arrow::int64());
+  std::shared_ptr<arrow::Field> field17 = arrow::field("lo_shipmode",  arrow::utf8());
+
+  auto lineorder_schema = arrow::schema({field1, field2, field3, field4,field5,
+                                    field6, field7, field8, field9, field10,
+                                    field11, field12, field13, field14, field15,
+                                    field16, field17});
+
+
+  std::shared_ptr<arrow::Field> d_field1 = arrow::field("d_datekey", arrow::int64());
+  std::shared_ptr<arrow::Field> d_field2 = arrow::field("d_date", arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field3 = arrow::field("d_dayofweek", arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field4 = arrow::field("d_month", arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field5 = arrow::field("d_year", arrow::int64());
+  std::shared_ptr<arrow::Field> d_field6 = arrow::field("d_yearmonthnum", arrow::int64());
+  std::shared_ptr<arrow::Field> d_field7 = arrow::field("d_yearmonth", arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field8 = arrow::field("d_daynuminweek", arrow::int64());
+  std::shared_ptr<arrow::Field> d_field9 = arrow::field("d_daynuminmonth", arrow::int64());
+  std::shared_ptr<arrow::Field> d_field10 = arrow::field("d_daynuminyear",  arrow::int64());
+  std::shared_ptr<arrow::Field> d_field11 = arrow::field("d_monthnuminyear",  arrow::int64());
+  std::shared_ptr<arrow::Field> d_field12 = arrow::field("d_weeknuminyear",  arrow::int64());
+  std::shared_ptr<arrow::Field> d_field13 = arrow::field("d_sellingseason",  arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field14 = arrow::field("d_lastdayinweekfl",  arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field15 = arrow::field("d_lastdayinmonthfl",  arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field16 = arrow::field("d_holidayfl",  arrow::utf8());
+  std::shared_ptr<arrow::Field> d_field17 = arrow::field("d_weekdayfl",  arrow::utf8());
+
+
+  auto ddate_schema = arrow::schema({ d_field1,  d_field2,  d_field3,  d_field4,  d_field5,
+                                d_field6,  d_field7,  d_field8,  d_field9,  d_field10,
+                                d_field11,  d_field12,  d_field13,  d_field14,  d_field15,
+                                d_field16,  d_field17});
+
+  auto ddate = read_from_csv_file("/Users/lichengxihuang/Documents/hustle/ddate.csv", ddate_schema, BLOCK_SIZE);
+  auto lineorder = read_from_csv_file("/Users/lichengxihuang/Documents/hustle/lineorder.csv", lineorder_schema, BLOCK_SIZE);
+
+  write_to_file("ddate.hsl", *ddate);
+  write_to_file("lineorder.hsl", *lineorder);
+
+  lineorder = read_from_file("lineorder.hsl");
+  ddate = read_from_file("ddate.hsl");
+
+  // // Date.year month num = 199401
+  // auto date_select_op = std::make_shared<hustle::operators::Select>(
+  //     arrow::compute::CompareOperator::EQUAL,
+  //     "d_yearmonthnum",
+  //     arrow::compute::Datum((int64_t) 199401)
+  // );
+  //
+  // // Create select operator for Lineorder.discount >= 4
+  // auto lineorder_select_op_1 = std::make_shared<hustle::operators::Select>(
+  //     arrow::compute::CompareOperator::GREATER_EQUAL,
+  //     "lo_discount",
+  //     arrow::compute::Datum((int64_t) 4)
+  // );
+  //
+  // // Lineorder.discount <= 6
+  // auto lineorder_select_op_2 = std::make_shared<hustle::operators::Select>(
+  //     arrow::compute::CompareOperator::LESS_EQUAL,
+  //     "lo_discount",
+  //     arrow::compute::Datum((int64_t) 6)
+  // );
+  //
+  // // Create select operator for Lineorder.quantity >= 26
+  // auto lineorder_select_op_3 = std::make_shared<hustle::operators::Select>(
+  //     arrow::compute::CompareOperator::GREATER_EQUAL,
+  //     "lo_quantity",
+  //     arrow::compute::Datum((int64_t) 26)
+  // );
+  //
+  // // Create select operator for Lineorder.quantity <= 35
+  // auto lineorder_select_op_4 = std::make_shared<hustle::operators::Select>(
+  //     arrow::compute::CompareOperator::LESS_EQUAL,
+  //     "lo_quantity",
+  //     arrow::compute::Datum((int64_t) 35)
+  // );
+  //
+  //
+  // // Combine select operators for lineorder into one composite operator.
+  // auto lineorder_select_op_composite_1 =
+  //     std::make_shared<hustle::operators::SelectComposite>
+  //         (lineorder_select_op_1, lineorder_select_op_2,
+  //          hustle::operators::FilterOperator::AND);
+  //
+  // auto lineorder_select_op_composite_2 =
+  //     std::make_shared<hustle::operators::SelectComposite>
+  //         (lineorder_select_op_3, lineorder_select_op_4,
+  //          hustle::operators::FilterOperator::AND);
+  //
+  // auto lineorder_select_op_composite_3 =
+  //     std::make_shared<hustle::operators::SelectComposite>(
+  //         lineorder_select_op_composite_1,
+  //         lineorder_select_op_composite_2,
+  //         hustle::operators::FilterOperator::AND);
+  //
+  // // Create natural join operator for left.order date == right.date key
+  // // For this query, left corresponds to Lineorder, and right corresponds
+  // // to Date.
+  // auto join_op = std::make_shared<hustle::operators::Join>("lo_orderdate",
+  //                                                          "d_datekey");
+  //
+  // arrow::compute::Datum left_selection = lineorder_select_op_composite_3->get_filter(lineorder);
+  // arrow::compute::Datum right_selection = date_select_op->get_filter(ddate);
+  //
+  // auto join_table = join_op->hash_join(lineorder, left_selection, ddate, right_selection);
+  //
+  // // Create aggregate operator
+  //
+  // std::vector<std::shared_ptr<arrow::Field>> agg_fields =
+  //     {arrow::field("lo_extendedprice", arrow::utf8())};
+  // std::vector<std::shared_ptr<arrow::Field>> group_fields = {};
+  // std::vector<std::shared_ptr<arrow::Field>> order_fields = {};
+  // auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+  //     hustle::operators::AggregateKernels::SUM,
+  //     agg_fields,
+  //     group_fields,
+  //     order_fields);
+  //
+  // // Perform aggregate over resulting join table
+  // auto aggregate = aggregate_op->run_operator({join_table});
+  //
+  // // Print the result. The valid bit will be printed as the first column.
+  // if (aggregate != nullptr) aggregate->print();
+
+
+
+
   hustle::HustleDB hustleDB("db_directory");
 
   std::string query = "EXPLAIN QUERY PLAN select sum(lo_extendedprice) as revenue "
@@ -259,6 +404,8 @@ TEST_F(ResolverSSBTest, ssb_qtemp) {
   parser->parse(query, hustleDB);
   resolver->resolve(parser->getParseTree());
   std::cout << "Plan:" << resolver->toString(4) << std::endl;
+  auto walker = std::make_shared<hustle::resolver::PlanWalker>();
+  walker->walk(resolver->getPlan());
 
   // TODO(Lichengxi): build validation plan
 
@@ -267,7 +414,7 @@ TEST_F(ResolverSSBTest, ssb_qtemp) {
 TEST_F(ResolverSSBTest, ssb_q1) {
   hustle::HustleDB hustleDB("db_directory");
 
-  std::string query = "EXPLAIN QUERY PLAN select lo_extendedprice, sum(lo_extendedprice * lo_discount) as revenue "
+  std::string query = "EXPLAIN QUERY PLAN select sum(lo_extendedprice * lo_discount) as revenue "
                       "from lineorder, ddate "
                       "where lo_orderdate = d_datekey and d_year = 1993 and lo_discount between 1 and 3 and lo_quantity < 25;";
 
@@ -308,7 +455,7 @@ TEST_F(ResolverSSBTest, ssb_q2) {
 TEST_F(ResolverSSBTest, ssb_q3) {
   hustle::HustleDB hustleDB("db_directory");
 
-  std::string query = "EXPLAIN QUERY PLAN select sum(lo_extendedprice*lo_discount) as revenue\n"
+  std::string query = "EXPLAIN QUERY PLAN select sum(lo_extendedprice * lo_discount) as revenue\n"
                       "from lineorder, ddate\n"
                       "where lo_orderdate = d_datekey\n"
                       "and d_weeknuminyear = 6 and d_year = 1994\n"
