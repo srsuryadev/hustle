@@ -11,24 +11,20 @@
 namespace hustle {
 namespace operators {
 
-struct record_id {
-    int block_id;
-    int row_index;
-};
-
 class JoinOperator : public Operator {
 
     virtual arrow::compute::Datum get_indices() = 0;
 };
 
+struct record_id {
+    // For Tables, offset = block_row_offset.
+    // For ChunkedArrays (i.e. arrays of indices), offset = chunk number
+    int offset;
+    int row_index;
+};
+
 class Join : public Operator{
 public:
-    Join(std::string left_column_name, std::string right_column_name);
-
-    // TODO(nicholas): These function are not implemented.
-    std::shared_ptr<Table> run_operator
-    (std::vector<std::shared_ptr<Table>> table) override;
-
     /**
     * Perform a natural join on two tables using hash join. Projections are not
     * yet supported; all columns from both tables will be returned in the
@@ -38,21 +34,90 @@ public:
     * @param right_table The table for which a hash table is built
     * @return A new table containing the results of the join
     */
-    std::shared_ptr<Table> hash_join(
-            std::shared_ptr<Table> left_table,
-            arrow::compute::Datum left_selection,
-            std::shared_ptr<Table> right_table,
-            arrow::compute::Datum right_selection);
 
-    arrow::compute::Datum get_left_indices();
-    arrow::compute::Datum get_right_indices();
+//    Interface Joinable;
+
+    Join(std::shared_ptr<Table>& left_table,
+            arrow::compute::Datum& left_selection,
+            std::string left_column_name,
+            std::shared_ptr<Table>& right_table,
+            arrow::compute::Datum& right_selection,
+            std::string right_column_name);
+
+    Join(std::vector<JoinResult>& left_join_result,
+            std::string left_column_name,
+            std::shared_ptr<Table>& right_table,
+            arrow::compute::Datum& right_selection,
+            std::string right_column_name);
+
+//TODO(nicholas): Should these be implemented?
+
+//    Join(const std::shared_ptr<Table>& left_table,
+//         const std::string& left_column_name,
+//         const std::shared_ptr<Table>& right_table,
+//         const std::string& right_column_name);
+//
+//    Join(const std::shared_ptr<Table>& left_table,
+//         const std::string& left_column_name,
+//         const arrow::compute::Datum& left_selection,
+//         const std::shared_ptr<Table>& right_table,
+//         const std::string& right_column_name);
+//
+//    Join(const std::shared_ptr<Table>& left_table,
+//         const std::string& left_column_name,
+//         const std::shared_ptr<Table>& right_table,
+//         const std::string& right_column_name,
+//         const arrow::compute::Datum& right_selection);
+
+    std::vector<JoinResult> hash_join();
 
 private:
-    std::string left_join_column_name_;
-    std::string right_join_column_name_;
+    arrow::compute::Datum left_filter_;
+    arrow::compute::Datum right_filter_;
+
+    std::shared_ptr<arrow::ChunkedArray> left_join_col_;
+    std::shared_ptr<arrow::ChunkedArray> right_join_col_;
+
+    arrow::compute::Datum left_selection_;
+    arrow::compute::Datum right_selection_;
+
+    //TODO(nicholas): a better name?
+    std::vector<JoinResult> left_join_result_;
+    std::vector<JoinResult> right_join_result_;
+
+    std::shared_ptr<Table> left_table_;
+    std::shared_ptr<Table> right_table_;
+
+    std::string left_join_col_name_;
+    std::string right_join_col_name_;
 
     std::shared_ptr<arrow::Array> left_indices_;
     std::shared_ptr<arrow::Array> right_indices_;
+
+    std::unordered_map<int64_t, int64_t> hash_table_;
+
+    std::vector<JoinResult> hash_join(
+            std::vector<JoinResult>&,
+            const std::shared_ptr<Table>& right_table);
+    std::vector<JoinResult> hash_join(
+            const std::shared_ptr<Table>& left_table,
+            const std::shared_ptr<Table>& right_table);
+
+    std::vector<JoinResult> probe_hash_table
+        (std::shared_ptr<arrow::ChunkedArray> probe_col);
+        std::vector<JoinResult> probe_hash_table_2
+                (std::shared_ptr<arrow::ChunkedArray> probe_col);
+
+    arrow::compute::Datum get_left_indices();
+    arrow::compute::Datum get_right_indices();
+    arrow::compute::Datum get_indices_for_table(
+            const std::shared_ptr<Table> &other);
+
+    std::unordered_map<int64_t, int64_t> build_hash_table
+            (std::shared_ptr<arrow::ChunkedArray> col);
+    std::shared_ptr<arrow::ChunkedArray> apply_selection
+            (std::shared_ptr<arrow::ChunkedArray> col, arrow::compute::Datum
+            selection);
 
 };
 

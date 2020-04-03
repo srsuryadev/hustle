@@ -393,14 +393,14 @@ bool Block::insert_records(std::vector<std::shared_ptr<arrow::ArrayData>>
                     // input array, we copy only n offsets
                 else {
                     std::memcpy(&offsets_data[num_rows+1],
-                                &in_offsets_data[offset],
+                                &in_offsets_data[offset+1],
                                 sizeof(int32_t) * n);
                     // Correct new offsets
                     for (int k = 1; k <= n; k++) {
                         // BUG: This assumes the input data was not a slice, i.e.
                         // its offsets started at 0
                         offsets_data[num_rows + k] += current_offset -
-                                                      in_offsets_data[offset-1];
+                                                      in_offsets_data[offset];
                     }
                 }
 
@@ -425,7 +425,8 @@ bool Block::insert_records(std::vector<std::shared_ptr<arrow::ArrayData>>
                 if (column_sizes[i] + sizeof(int64_t) * n >
                     data_buffer->capacity()) {
                     status = data_buffer->Resize(
-                            data_buffer->size() + sizeof(int64_t) * n, false);
+                            data_buffer->capacity() + sizeof(int64_t) * n,
+                                    false);
                     evaluate_status(status, __FUNCTION__, __LINE__);
                 }
 
@@ -446,7 +447,8 @@ bool Block::insert_records(std::vector<std::shared_ptr<arrow::ArrayData>>
                 if (column_sizes[i] + sizeof(double_t) * n >
                     data_buffer->capacity()) {
                     status = data_buffer->Resize(
-                            data_buffer->size() + sizeof(double_t) * n, false);
+                            data_buffer->capacity() + sizeof(double_t) * n,
+                            false);
                     evaluate_status(status, __FUNCTION__, __LINE__);
                 }
 
@@ -512,6 +514,8 @@ bool Block::insert_record(uint8_t *record, int32_t *byte_widths) {
                 // result in copying the data.
                 // Use index i-1 because byte_widths does not include the byte
                 // width of the valid column.
+                // TODO(nicholas): size() may not be up to date! Use
+                //  column_sizes[i] instead.
                 status = data_buffer->Resize(
                         data_buffer->size() + byte_widths[i], false);
                 evaluate_status(status, __FUNCTION__, __LINE__);
@@ -639,9 +643,8 @@ bool Block::insert_record(std::vector<std::string_view> record, int32_t
 
                 if (offsets_data[num_rows] + record[i].length() >
                     data_buffer->capacity()) {
-                    // TODO(nicholas): do we need a +1 here too?
                     status = data_buffer->Resize(
-                            data_buffer->size() + record[i].length(), false);
+                            data_buffer->capacity() + record[i].length(),false);
                     evaluate_status(status, __FUNCTION__, __LINE__);
                 }
 

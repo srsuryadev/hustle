@@ -4,6 +4,7 @@
 #include <string>
 #include <table/block.h>
 #include <table/table.h>
+#include <arrow/compute/api.h>
 
 namespace hustle {
 namespace operators {
@@ -14,52 +15,24 @@ enum FilterOperator {
     NONE
 };
 
-// TODO(nicholas): should operators return empty table or nullptr?
-// TODO(nicholas): Operators should accept a Field rather than a column name,
-//  since a Field would contain the column name as well as the column type.
+//TODO(nicholas): Better name?
+struct JoinResult {
+    std::shared_ptr<Table> table;
+    // column AFTER a filter from a select predicate was applied.
+    std::shared_ptr<arrow::ChunkedArray> col;
+    arrow::compute::Datum filter; // filters are ChunkedArrays
+    arrow::compute::Datum selection; // selections are Arrays
+};
+
+struct ColumnReference {
+    std::shared_ptr<Table> table;
+    std::string col_name;
+};
+
 class Operator {
 public:
 
-    virtual std::shared_ptr<Table> run_operator
-            (std::vector<std::shared_ptr<Table>> tables) = 0;
-
-//    virtual bool is_leaf() = 0;
-
-//    virtual void set_children(
-//            std::shared_ptr<Operator> left_child,
-//            std::shared_ptr<Operator> right_child,
-//            FilterOperator filter_operator) = 0;
-
-//protected:
-//    std::shared_ptr<Operator> left_child_;
-//    std::shared_ptr<Operator> right_child_;
-//    bool is_leaf;
 };
-
-//    virtual void set_children(std::shared_ptr<Operator> left_child,
-//            std::shared_ptr<Operator> right_child) = 0;
-//protected:
-//    std::shared_ptr<Operator> left_child_;
-//    std::shared_ptr<Operator> right_child_;
-//    FilterOperator filter_operator_;
-
-
-//class OperatorLeaf : public Operator {
-//    public:
-//
-//    virtual std::shared_ptr<Table> runOperator
-//            (std::vector<std::shared_ptr<Table>> tables) = 0;
-//
-//};
-//
-//class OperatorComposite : public Operator {
-//    public:
-//
-//    std::shared_ptr<Operator> left_child;
-//    std::shared_ptr<Operator> right_child;
-//};
-
-
 } // namespace operators
 } // namespace hustle
 
