@@ -8,6 +8,7 @@
 #include <operators/Select.h>
 #include <operators/Join.h>
 #include <operators/Aggregate.h>
+#include <operators/OrderBy.h>
 #include "Resolver.h"
 
 namespace hustle {
@@ -38,7 +39,7 @@ class PlanWalker {
         std::string filename = curr->table_name + ".hsl";
         // return read_from_file(filename.c_str());
 
-        std::cout << "read_from_file" << filename << std::endl;
+        std::cout << "read_from_file " << filename << std::endl;
         return nullptr;
       }
       case types::QueryOperatorType::Select: {
@@ -59,7 +60,7 @@ class PlanWalker {
 
         auto table = walkQuery(curr->input);
         // return select->run_operator({table});
-        std::cout << "select->run_operator({table})" << std::endl;
+        std::cout << "select->run_operator" << std::endl;
         return nullptr;
       }
       case types::QueryOperatorType::Project: {
@@ -94,8 +95,9 @@ class PlanWalker {
         auto table = walkQuery(curr->input);
 
         // TODO: Implement hustle::operators::OrderBy
-        // auto orderby = std::make_shared<hustle::operators::OrderBy>();
+        auto orderby = walkOrderBy(curr->orderby_cols, curr->orders);
         // return orderby->run_operator(table);
+        std::cout << "orderby->run_operator" << std::endl;
         return nullptr;
       }
     }
@@ -140,11 +142,10 @@ class PlanWalker {
       const std::vector<std::shared_ptr<ColumnReference>>& groupby_cols) {
 
     std::vector<std::shared_ptr<arrow::Field>> aggregate_fields = {
-        arrow::field(walkColumnReference(std::dynamic_pointer_cast<
-                         ColumnReference>(aggregate_func->expr)),
-                     arrow::utf8())
-    };
-    // walkColumnReference(groupby_cols[0])
+        arrow::field(walkColumnReference(
+            std::dynamic_pointer_cast<ColumnReference>(aggregate_func->expr)),
+                     arrow::utf8())};
+
     std::vector<std::shared_ptr<arrow::Field>> group_by_fields = {};
     std::vector<std::shared_ptr<arrow::Field>> order_by_fields = {};
     return std::make_shared<hustle::operators::Aggregate>(
@@ -152,6 +153,16 @@ class PlanWalker {
         aggregate_fields,
         group_by_fields,
         order_by_fields);
+  }
+
+  static std::shared_ptr<hustle::operators::OrderBy> walkOrderBy(
+      const std::vector<std::shared_ptr<ColumnReference>>& orderby_cols,
+      const std::vector<OrderByDirection>& orders) {
+
+    // std::shared_ptr<arrow::Field> order_by_field =
+    // return std::make_shared<hustle::operators::OrderBy>();
+    return nullptr;
+
   }
 
   static std::string walkColumnReference(

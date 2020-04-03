@@ -6721,7 +6721,7 @@ SQLITE_PRIVATE int sqlite3Select(
     if (p->pOrderBy) {
       currPos = orderBy;
       for (int k = 0; k < p->pOrderBy->nExpr; k++) {
-        currPos += sprintf(currPos, "{\"order\": %d, \"expr\": ", p->pOrderBy->a[k].sortFlags);
+        currPos += sprintf(currPos, "{\"order\": %d, \"orderby_col\": ", p->pOrderBy->a[k].sortFlags);
         resolveExpr(p->pOrderBy->a[k].pExpr);
         currPos += sprintf(currPos, "}");
         if (k != p->pOrderBy->nExpr - 1) {

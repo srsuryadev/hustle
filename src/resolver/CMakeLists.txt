@@ -9,14 +9,6 @@ target_link_libraries(resolver
         parser
 )
 
-#target_include_directories(resolver PUBLIC ${ARROW_INCLUDE_DIR})
-#target_link_libraries(resolver PUBLIC
-#        operators
-#        table
-#        ${ARROW_SHARED_LIB}
-#        )
-
-
 add_executable(hustle_resolver_simple_test "tests/HustleResolver_simple_test.cpp")
 target_link_libraries(hustle_resolver_simple_test
         gtest

@@ -121,11 +121,11 @@ class Resolver {
 
     // resolve OrderBy
     if (!parse_tree->order_by.empty()) {
-      std::vector<std::shared_ptr<Expr>> orderby_cols;
+      std::vector<std::shared_ptr<ColumnReference>> orderby_cols;
       std::vector<OrderByDirection> orders;
 
       for (auto &orderby : parse_tree->order_by) {
-        orderby_cols.push_back(resolveExpr(orderby->expr));
+        orderby_cols.push_back(resolveColumnReference(orderby->orderby_col));
         orders.push_back(orderby->order);
       }
       root = std::make_shared<OrderBy>(std::move(root),

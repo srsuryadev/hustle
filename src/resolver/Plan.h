@@ -196,15 +196,15 @@ class Aggregate : public QueryOperator {
 class OrderBy : public QueryOperator {
  public:
   OrderBy(std::shared_ptr<QueryOperator> _input,
-          std::vector<std::shared_ptr<Expr>> _cols,
+          std::vector<std::shared_ptr<ColumnReference>> _orderby_cols,
           std::vector<OrderByDirection> _orders)
       : QueryOperator(QueryOperatorType::OrderBy),
         input(std::move(_input)),
-        orderby_cols(std::move(_cols)),
+        orderby_cols(std::move(_orderby_cols)),
         orders(std::move(_orders)) {}
 
   std::shared_ptr<QueryOperator> input;
-  std::vector<std::shared_ptr<Expr>> orderby_cols;
+  std::vector<std::shared_ptr<ColumnReference>> orderby_cols;
   std::vector<OrderByDirection> orders;
 };
 

@@ -172,11 +172,12 @@ class Project {
 class OrderBy {
  public:
   OrderBy(OrderByDirection _order,
-          std::shared_ptr<Expr> _expr) : order(_order),
-                                         expr(std::move(_expr)) {}
+          std::shared_ptr<ColumnReference> _orderby_col)
+      : order(_order),
+        orderby_col(std::move(_orderby_col)) {}
 
   OrderByDirection order;
-  std::shared_ptr<Expr> expr;
+  std::shared_ptr<ColumnReference> orderby_col;
 };
 
 /**
@@ -288,13 +289,13 @@ void to_json(json &j, const std::shared_ptr<Project> &proj) {
 void from_json(const json &j, std::shared_ptr<OrderBy> &order_by) {
   order_by = std::make_shared<OrderBy>(
       OrderByDirection::_from_index(j.at("order")),
-      j.at("expr"));
+      j.at("orderby_col"));
 }
 void to_json(json &j, const std::shared_ptr<OrderBy> &order_by) {
   j = json
       {
           {"order", order_by->order._to_string()},
-          {"expr", order_by->expr}
+          {"orderby_col", order_by->orderby_col}
       };
 }
 void from_json(const json &j, std::shared_ptr<Expr> &expr) {

@@ -31,73 +31,32 @@ class Parser {
    * @param sql: input sql query
    * @param hustleDB: input hustle database
    */
-  void parse(const std::string &sql, hustle::HustleDB &hustleDB) {
-    checkExplain(sql);
-
-    // TODO(Lichengxi): enable concurrency, add locks
-    hustleDB.getPlan(sql);
-
-    std::string text =
-        "{\"tableList\": [" + std::string(tableList) +
-        "], \"project\": [" + std::string(project) +
-        "], \"loop_pred\": [" + std::string(loopPred) +
-        "], \"other_pred\": [" + std::string(otherPred) +
-        "], \"aggregate\": [" + std::string(aggregate) +
-        "], \"group_by\": [" + std::string(groupBy) +
-        "], \"order_by\": [" + std::string(orderBy) +
-        "]}";
-
-    json j = json::parse(text);
-    parse_tree_ = j;
-    preprocessing();
-  }
+  void parse(const std::string &sql, hustle::HustleDB &hustleDB);
 
   /**
    * Function to return the parse tree
    * @return the parse tree
    */
-  std::shared_ptr<ParseTree> getParseTree() {
-    return parse_tree_;
-  }
+  std::shared_ptr<ParseTree> getParseTree();
 
   /**
    * Move select predicates from loop_pred to other_pred
    */
-  void preprocessing() {
-    for (auto &loop_pred : parse_tree_->loop_pred) {
-      for (auto it = loop_pred->predicates.begin();
-           it != loop_pred->predicates.end();) {
-        if ((*it)->plan_type == "SELECT_Pred") {
-          parse_tree_->other_pred.push_back(std::move(*it));
-          loop_pred->predicates.erase(it);
-        } else {
-          it += 1;
-        }
-      }
-    }
-  }
+  void preprocessing();
 
   /**
    * Function to serialize the parse tree
    * @param indent: indentation
    * @return serialized json string
    */
-  std::string toString(int indent) {
-    json j = parse_tree_;
-    return j.dump(indent);
-  }
+  std::string toString(int indent);
 
  private:
   /**
    * check if the sql query starts with an "EXPLAIN"
    * @param sql: input sql query string
    */
-  static void checkExplain(const std::string &sql) {
-    if (!absl::StartsWithIgnoreCase(sql, "EXPLAIN")) {
-      std::cerr << "Not starting with EXPLAIN keyword" << std::endl;
-      exit(-1);
-    }
-  }
+  static void checkExplain(const std::string &sql);
 
   std::shared_ptr<ParseTree> parse_tree_;
 };
