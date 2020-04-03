@@ -1,12 +1,11 @@
 add_library(
         parser
         Parser.h Parser.cpp
-        ParseTree.h
+        ParseTree.h ParseTree.cpp
 )
 
 target_link_libraries(parser
         catalog
-        absl::strings
 )
 
 add_executable(hustle_parser_simple_test tests/HustleParser_simple_test.cpp)
