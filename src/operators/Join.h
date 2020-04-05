@@ -11,67 +11,56 @@
 namespace hustle {
 namespace operators {
 
-class JoinOperator : public Operator {
-
-    virtual arrow::compute::Datum get_indices() = 0;
-};
-
-struct record_id {
-    // For Tables, offset = block_row_offset.
-    // For ChunkedArrays (i.e. arrays of indices), offset = chunk number
-    int offset;
-    int row_index;
-};
 
 class Join : public Operator{
 public:
+
     /**
-    * Perform a natural join on two tables using hash join. Projections are not
-    * yet supported; all columns from both tables will be returned in the
-    * resulting table (excluding the duplicate join column).
-    *
-    * @param left_table The table that will probe the hash table
-    * @param right_table The table for which a hash table is built
-    * @return A new table containing the results of the join
-    */
+     * Construct an Join operator to perform hash join on two Tables.
+     *
+     * @param left a ColumnReference containing the left (outer) table and
+     * the name of the left join column.
+     * @param left_selection the filter returned by an earlier selection on the
+     * left table. If no selection was performed, pass in a null Datum.
+     * @param right a ColumnReference containing the right (inner) table and
+     * the name of the right join column.
+     * @param right_selection the filter returned by an earlier selection on the
+     * right table. If no selection was performed, pass in a null Datum.
+     */
+    Join(ColumnReference left,
+               arrow::compute::Datum& left_selection,
+               ColumnReference right,
+               arrow::compute::Datum& right_selection);
 
-//    Interface Joinable;
-
-    Join(std::shared_ptr<Table>& left_table,
-            arrow::compute::Datum& left_selection,
-            std::string left_column_name,
-            std::shared_ptr<Table>& right_table,
-            arrow::compute::Datum& right_selection,
-            std::string right_column_name);
-
+    /**
+     * Construct an Join operator to perform hash join on a vector of
+     * JoinResults and a Table.
+     *
+     * @param left_join_result The output of a previous call to hash_join().
+     * @param left a ColumnReference containing the left (outer) table and
+     * the name of the left join column. The left table must match one of the
+     * tables referenced in left_join_result.
+     * @param right a ColumnReference containing the right (inner) table and
+     * the name of the right join column.
+     * @param right_selection the filter returned by an earlier selection on the
+     * right table. If no selection was performed, pass in a null Datum.
+     */
     Join(std::vector<JoinResult>& left_join_result,
-            std::string left_column_name,
-            std::shared_ptr<Table>& right_table,
-            arrow::compute::Datum& right_selection,
-            std::string right_column_name);
+               ColumnReference left,
+               ColumnReference right,
+               arrow::compute::Datum& right_selection);
 
-//TODO(nicholas): Should these be implemented?
-
-//    Join(const std::shared_ptr<Table>& left_table,
-//         const std::string& left_column_name,
-//         const std::shared_ptr<Table>& right_table,
-//         const std::string& right_column_name);
-//
-//    Join(const std::shared_ptr<Table>& left_table,
-//         const std::string& left_column_name,
-//         const arrow::compute::Datum& left_selection,
-//         const std::shared_ptr<Table>& right_table,
-//         const std::string& right_column_name);
-//
-//    Join(const std::shared_ptr<Table>& left_table,
-//         const std::string& left_column_name,
-//         const std::shared_ptr<Table>& right_table,
-//         const std::string& right_column_name,
-//         const arrow::compute::Datum& right_selection);
-
+    /**
+    * Perform a natural join on two tables using hash join.
+    *
+    * @return A vector of JoinResult.
+    */
     std::vector<JoinResult> hash_join();
 
 private:
+
+    
+    //
     arrow::compute::Datum left_filter_;
     arrow::compute::Datum right_filter_;
 

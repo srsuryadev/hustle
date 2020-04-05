@@ -19,9 +19,9 @@ enum AggregateKernels {
 
 struct AggregateUnit {
     AggregateKernels kernel;
+    // TODO(nicholas): should table and col_name be combined into a
+    //  ColumnReference?
     std::shared_ptr<Table> table;
-    arrow::compute::Datum filter;
-    arrow::compute::Datum selection;
     std::string col_name;
 };
 
