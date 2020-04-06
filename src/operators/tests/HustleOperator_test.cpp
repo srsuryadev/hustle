@@ -352,1035 +352,1035 @@ TEST_F(SSBTestFixture, GroupByTest2) {
 
 }
 */
-
+/*
 TEST_F(SSBTestFixture, SSBQ1_1) {
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  // date.year = 1993
-  auto d_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1993)
-  );
+    // date.year = 1993
+    auto d_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1993)
+    );
 
-  // lineorder.discount >= 1
-  auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 1)
-  );
+    // lineorder.discount >= 1
+    auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 1)
+    );
 
-  // lineorder.discount <= 3
-  auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 3)
-  );
+    // lineorder.discount <= 3
+    auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 3)
+    );
 
-  // lineorder.quantity < 25
-  auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS,
-      "quantity",
-      arrow::compute::Datum((int64_t) 25)
-  );
+    // lineorder.quantity < 25
+    auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS,
+            "quantity",
+            arrow::compute::Datum((int64_t) 25)
+    );
 
-  // Combine select operators.
-  auto lo_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_1, lo_select_op_2,
-           hustle::operators::FilterOperator::AND);
-  auto lo_select_op_composite_2 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_composite_1, lo_select_op_3,
-           hustle::operators::FilterOperator::AND);
+    // Combine select operators.
+    auto lo_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_1, lo_select_op_2,
+                     hustle::operators::FilterOperator::AND);
+    auto lo_select_op_composite_2 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_composite_1, lo_select_op_3,
+                     hustle::operators::FilterOperator::AND);
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  arrow::compute::Datum lo_selection =
-      lo_select_op_composite_2->select(lineorder);
-  arrow::compute::Datum d_selection =
-      d_select_op->select(date);
+    arrow::compute::Datum lo_selection =
+            lo_select_op_composite_2->select(lineorder);
+    arrow::compute::Datum d_selection =
+            d_select_op->select(date);
 
-  arrow::compute::Datum empty_selection;
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    arrow::compute::Datum empty_selection;
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  ColumnReference d_ref = {date, "date key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  // Join lineorder.order date == date.date key
-  Join join_op(lo_d_ref, lo_selection,
-               d_ref, d_selection);
+    // Join lineorder.order date == date.date key
+    Join join_op(lo_d_ref, lo_selection,
+                 d_ref, d_selection);
 
-  auto join_result = join_op.hash_join();
+    auto join_result = join_op.hash_join();
 
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
-  std::vector<ColumnReference> group_bys = {{date, "year"}};
-  std::vector<ColumnReference> order_bys = {};
+    std::vector<AggregateUnit> units = {agg_unit};
+    std::vector<ColumnReference> group_bys = {{date, "year"}};
+    std::vector<ColumnReference> order_bys = {};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result,
-      units,
-      group_bys,
-      order_bys);
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result,
+            units,
+            group_bys,
+            order_bys);
 
-  // Perform aggregate over resulting join table
-  auto aggregate = aggregate_op->aggregate();
+    // Perform aggregate over resulting join table
+    auto aggregate = aggregate_op->aggregate();
 
-  // Print the result. The valid bit will be printed as the first column.
-  std::cout << "\nAGGREGATE" << std::endl;
-  if (aggregate != nullptr) aggregate->print();
+    // Print the result. The valid bit will be printed as the first column.
+    std::cout << "\nAGGREGATE" << std::endl;
+    if (aggregate != nullptr) aggregate->print();
 
 }
 
 TEST_F(SSBTestFixture, SSBQ1_2) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // date.year month num = 199401
-  auto d_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "year month num",
-      arrow::compute::Datum((int64_t) 199401)
-  );
+    // date.year month num = 199401
+    auto d_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "year month num",
+            arrow::compute::Datum((int64_t) 199401)
+    );
 
-  // lineorder.discount >= 4
-  auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 4)
-  );
+    // lineorder.discount >= 4
+    auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 4)
+    );
 
-  // lineorder.discount <= 6
-  auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 6)
-  );
+    // lineorder.discount <= 6
+    auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 6)
+    );
 
-  // lineorder.quantity >= 26
-  auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "quantity",
-      arrow::compute::Datum((int64_t) 26)
-  );
+    // lineorder.quantity >= 26
+    auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "quantity",
+            arrow::compute::Datum((int64_t) 26)
+    );
 
-  // lineorder.quantity <= 35
-  auto lo_select_op_4 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "quantity",
-      arrow::compute::Datum((int64_t) 35)
-  );
+    // lineorder.quantity <= 35
+    auto lo_select_op_4 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "quantity",
+            arrow::compute::Datum((int64_t) 35)
+    );
 
-  // Combine select operators
-  auto lo_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_1, lo_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    // Combine select operators
+    auto lo_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_1, lo_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  auto lo_select_op_composite_2 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_3, lo_select_op_4,
-           hustle::operators::FilterOperator::AND);
+    auto lo_select_op_composite_2 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_3, lo_select_op_4,
+                     hustle::operators::FilterOperator::AND);
 
-  auto lo_select_op_composite_3 =
-      std::make_shared<hustle::operators::SelectComposite>(
-          lo_select_op_composite_1,
-          lo_select_op_composite_2,
-          hustle::operators::FilterOperator::AND);
+    auto lo_select_op_composite_3 =
+            std::make_shared<hustle::operators::SelectComposite>(
+                    lo_select_op_composite_1,
+                    lo_select_op_composite_2,
+                    hustle::operators::FilterOperator::AND);
 
-  auto lo_selection = lo_select_op_composite_3->select
-      (lineorder);
-  auto d_selection = d_select_op->select(date);
+    auto lo_selection = lo_select_op_composite_3->select
+            (lineorder);
+    auto d_selection = d_select_op->select(date);
 
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  ColumnReference d_ref = {date, "date key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  // Join lineorder.order date == date.date key
-  Join join_op(lo_d_ref, lo_selection,
-               d_ref, d_selection);
+    // Join lineorder.order date == date.date key
+    Join join_op(lo_d_ref, lo_selection,
+                 d_ref, d_selection);
 
-  auto join_result = join_op.hash_join();
+    auto join_result = join_op.hash_join();
 
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
-  std::vector<ColumnReference> group_bys = {};
-  std::vector<ColumnReference> order_bys = {};
+    std::vector<AggregateUnit> units = {agg_unit};
+    std::vector<ColumnReference> group_bys = {};
+    std::vector<ColumnReference> order_bys = {};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result,
-      units,
-      group_bys,
-      order_bys);
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result,
+            units,
+            group_bys,
+            order_bys);
 
-  // Perform aggregate over resulting join table
-  auto aggregate = aggregate_op->aggregate();
+    // Perform aggregate over resulting join table
+    auto aggregate = aggregate_op->aggregate();
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 }
 
 TEST_F(SSBTestFixture, SSBQ1_3) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // date.week num in year = 6
-  auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "week num in year",
-      arrow::compute::Datum((int64_t) 6)
-  );
+    // date.week num in year = 6
+    auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "week num in year",
+            arrow::compute::Datum((int64_t) 6)
+    );
 
-  // date.year = 1994
-  auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1994)
-  );
+    // date.year = 1994
+    auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1994)
+    );
 
-  // Combine select operators
-  auto d_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (d_select_op_1, d_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    // Combine select operators
+    auto d_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (d_select_op_1, d_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  // lineorder.discount >= 4
-  auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 5)
-  );
+    // lineorder.discount >= 4
+    auto lo_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 5)
+    );
 
-  // lineorder.discount <= 6
-  auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "discount",
-      arrow::compute::Datum((int64_t) 7)
-  );
+    // lineorder.discount <= 6
+    auto lo_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "discount",
+            arrow::compute::Datum((int64_t) 7)
+    );
 
-  // lineorder.quantity >= 26
-  auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "quantity",
-      arrow::compute::Datum((int64_t) 26)
-  );
+    // lineorder.quantity >= 26
+    auto lo_select_op_3 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "quantity",
+            arrow::compute::Datum((int64_t) 26)
+    );
 
-  // lineorder.quantity <= 35
-  auto lo_select_op_4 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "quantity",
-      arrow::compute::Datum((int64_t) 35)
-  );
+    // lineorder.quantity <= 35
+    auto lo_select_op_4 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "quantity",
+            arrow::compute::Datum((int64_t) 35)
+    );
 
-  // Combine select operators
-  auto lo_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_1, lo_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    // Combine select operators
+    auto lo_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_1, lo_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  auto lo_select_op_composite_2 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (lo_select_op_3, lo_select_op_4,
-           hustle::operators::FilterOperator::AND);
+    auto lo_select_op_composite_2 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (lo_select_op_3, lo_select_op_4,
+                     hustle::operators::FilterOperator::AND);
 
-  auto lo_select_op_composite_3 =
-      std::make_shared<hustle::operators::SelectComposite>(
-          lo_select_op_composite_1,
-          lo_select_op_composite_2,
-          hustle::operators::FilterOperator::AND);
+    auto lo_select_op_composite_3 =
+            std::make_shared<hustle::operators::SelectComposite>(
+                    lo_select_op_composite_1,
+                    lo_select_op_composite_2,
+                    hustle::operators::FilterOperator::AND);
 
-  auto lo_selection = lo_select_op_composite_3->select
-      (lineorder);
-  auto d_selection = d_select_op_composite_1->select(date);
+    auto lo_selection = lo_select_op_composite_3->select
+            (lineorder);
+    auto d_selection = d_select_op_composite_1->select(date);
 
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  ColumnReference d_ref = {date, "date key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  // Join lineorder.order date == date.date key
-  Join join_op(lo_d_ref, lo_selection,
-               d_ref, d_selection);
+    // Join lineorder.order date == date.date key
+    Join join_op(lo_d_ref, lo_selection,
+                 d_ref, d_selection);
 
-  auto join_result = join_op.hash_join();
+    auto join_result = join_op.hash_join();
 
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
-  std::vector<ColumnReference> group_bys = {};
-  std::vector<ColumnReference> order_bys = {};
+    std::vector<AggregateUnit> units = {agg_unit};
+    std::vector<ColumnReference> group_bys = {};
+    std::vector<ColumnReference> order_bys = {};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result,
-      units,
-      group_bys,
-      order_bys);
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result,
+            units,
+            group_bys,
+            order_bys);
 
-  // Perform aggregate over resulting join table
-  auto aggregate = aggregate_op->aggregate();
+    // Perform aggregate over resulting join table
+    auto aggregate = aggregate_op->aggregate();
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 }
 
 TEST_F(SSBTestFixture, SSBQ2_1) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  part = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/part.hsl");
+    part = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/part.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto p_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "category",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("MFGR#12"))
-  );
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto p_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "category",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("MFGR#12"))
+    );
 
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "region",
-      arrow::compute::Datum(std::make_shared<arrow::StringScalar>
-                                ("AMERICA"))
-  );
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "region",
+            arrow::compute::Datum(std::make_shared<arrow::StringScalar>
+                                          ("AMERICA"))
+    );
 
 
-  arrow::compute::Datum empty_selection;
+    arrow::compute::Datum empty_selection;
 
-  arrow::compute::Datum p_selection =
-      p_select_op->select(part);
-  arrow::compute::Datum s_selection =
-      s_select_op->select(supp);
+    arrow::compute::Datum p_selection =
+            p_select_op->select(part);
+    arrow::compute::Datum s_selection =
+            s_select_op->select(supp);
 
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
 
-  auto join_result_1 = join_op_1->hash_join();
+    auto join_result_1 = join_op_1->hash_join();
 
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_p_ref,
-      p_ref, p_selection);
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_p_ref,
+            p_ref, p_selection);
 
-  auto join_result_2 = join_op_2->hash_join();
+    auto join_result_2 = join_op_2->hash_join();
 
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, empty_selection);
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, empty_selection);
 
-  auto join_result_3 = join_op_3->hash_join();
+    auto join_result_3 = join_op_3->hash_join();
 
-  std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
-  std::vector<ColumnReference> order_bys = {{date, "year"}, {part, "brand1"}};
+    std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
+    std::vector<ColumnReference> order_bys = {{date, "year"}, {part, "brand1"}};
 
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
+    std::vector<AggregateUnit> units = {agg_unit};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
 
 TEST_F(SSBTestFixture, SSBQ2_2) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  part = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/part.hsl");
+    part = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/part.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto p_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "brand1",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("MFGR#2221"))
-  );
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto p_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "brand1",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("MFGR#2221"))
+    );
 
-  auto p_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "brand1",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("MFGR#2228"))
-  );
+    auto p_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "brand1",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("MFGR#2228"))
+    );
 
-  auto p_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (p_select_op_1, p_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    auto p_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (p_select_op_1, p_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "region",
-      arrow::compute::Datum(std::make_shared<arrow::StringScalar>
-                                ("ASIA"))
-  );
-
-
-  arrow::compute::Datum empty_selection;
-
-  arrow::compute::Datum p_selection =
-      p_select_op_composite_1->select(part);
-  arrow::compute::Datum s_selection =
-      s_select_op->select(supp);
-
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
-
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
-
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
-
-  auto join_result_1 = join_op_1->hash_join();
-
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_p_ref,
-      p_ref, p_selection);
-
-  auto join_result_2 = join_op_2->hash_join();
-
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, empty_selection);
-
-  auto join_result_3 = join_op_3->hash_join();
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "region",
+            arrow::compute::Datum(std::make_shared<arrow::StringScalar>
+                                          ("ASIA"))
+    );
 
 
+    arrow::compute::Datum empty_selection;
 
-  std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
-  std::vector<ColumnReference> order_bys = {{date, "year"}, {part,"brand1"}};
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    arrow::compute::Datum p_selection =
+            p_select_op_composite_1->select(part);
+    arrow::compute::Datum s_selection =
+            s_select_op->select(supp);
 
-  std::vector<AggregateUnit> units = {agg_unit};
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    auto join_result_1 = join_op_1->hash_join();
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_p_ref,
+            p_ref, p_selection);
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    auto join_result_2 = join_op_2->hash_join();
+
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, empty_selection);
+
+    auto join_result_3 = join_op_3->hash_join();
+
+
+
+    std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
+    std::vector<ColumnReference> order_bys = {{date, "year"}, {part,"brand1"}};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
+
+    std::vector<AggregateUnit> units = {agg_unit};
+
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
+
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
+
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
 
 TEST_F(SSBTestFixture, SSBQ2_3) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  part = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/part.hsl");
+    part = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/part.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto p_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "brand1",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("MFGR#2221"))
-  );
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto p_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "brand1",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("MFGR#2221"))
+    );
 
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "region",
-      arrow::compute::Datum(std::make_shared<arrow::StringScalar>
-                                ("EUROPE"))
-  );
-
-
-  arrow::compute::Datum empty_selection;
-
-  arrow::compute::Datum p_selection =
-      p_select_op->select(part);
-  arrow::compute::Datum s_selection =
-      s_select_op->select(supp);
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "region",
+            arrow::compute::Datum(std::make_shared<arrow::StringScalar>
+                                          ("EUROPE"))
+    );
 
 
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    arrow::compute::Datum empty_selection;
 
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
-
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
-
-  auto join_result_1 = join_op_1->hash_join();
-
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_p_ref,
-      p_ref, p_selection);
-
-  auto join_result_2 = join_op_2->hash_join();
-
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, empty_selection);
-
-  auto join_result_3 = join_op_3->hash_join();
+    arrow::compute::Datum p_selection =
+            p_select_op->select(part);
+    arrow::compute::Datum s_selection =
+            s_select_op->select(supp);
 
 
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
+
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
+
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
+
+    auto join_result_1 = join_op_1->hash_join();
+
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_p_ref,
+            p_ref, p_selection);
+
+    auto join_result_2 = join_op_2->hash_join();
+
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, empty_selection);
+
+    auto join_result_3 = join_op_3->hash_join();
 
 
-  std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
-  std::vector<ColumnReference> order_bys = {{date, "year"}, {part,"brand1"}};
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    std::vector<ColumnReference> group_bys = {{date, "year"}, {part, "brand1"}};
+    std::vector<ColumnReference> order_bys = {{date, "year"}, {part,"brand1"}};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    std::vector<AggregateUnit> units = {agg_unit};
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
 
 TEST_F(SSBTestFixture, SSBQ3_1) {
 
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  cust = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/customer.hsl");
+    cust = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/customer.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
-
-
-  auto t1 = std::chrono::high_resolution_clock::now();
-
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto c_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "region",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("ASIA"))
-  );
-
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "region",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("ASIA"))
-  );
-  auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1992)
-  );
-  auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1997)
-  );
-  auto d_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (d_select_op_1, d_select_op_2,
-           hustle::operators::FilterOperator::AND);
-
-  arrow::compute::Datum empty_selection;
-
-  auto d_selection = d_select_op_composite_1->select(date);
-  auto s_selection = s_select_op->select(supp);
-  auto c_selection = c_select_op->select(cust);
-
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_c_ref = {lineorder, "cust key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
-
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference c_ref = {cust, "cust key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
-
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
-
-  auto join_result_1 = join_op_1->hash_join();
-
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_c_ref,
-      c_ref, c_selection);
-
-  auto join_result_2 = join_op_2->hash_join();
-
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, d_selection);
-
-  auto join_result_3 = join_op_3->hash_join();
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
 
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  std::vector<ColumnReference> group_bys = {{cust, "nation"},
-                                            {supp, "nation"},
-                                            {date,"year"}};
-  //TODO(nicholas): We currently do not support sorting on the aggregate
-  // column, so this result will not look as expected.
-  std::vector<ColumnReference> order_bys = {{date,"year"}};
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto c_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "region",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("ASIA"))
+    );
 
-  std::vector<AggregateUnit> units = {agg_unit};
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "region",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("ASIA"))
+    );
+    auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1992)
+    );
+    auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1997)
+    );
+    auto d_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (d_select_op_1, d_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    arrow::compute::Datum empty_selection;
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    auto d_selection = d_select_op_composite_1->select(date);
+    auto s_selection = s_select_op->select(supp);
+    auto c_selection = c_select_op->select(cust);
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_c_ref = {lineorder, "cust key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference c_ref = {cust, "cust key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
+
+    auto join_result_1 = join_op_1->hash_join();
+
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_c_ref,
+            c_ref, c_selection);
+
+    auto join_result_2 = join_op_2->hash_join();
+
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, d_selection);
+
+    auto join_result_3 = join_op_3->hash_join();
+
+
+
+    std::vector<ColumnReference> group_bys = {{cust, "nation"},
+                                              {supp, "nation"},
+                                              {date,"year"}};
+    //TODO(nicholas): We currently do not support sorting on the aggregate
+    // column, so this result will not look as expected.
+    std::vector<ColumnReference> order_bys = {{date,"year"}};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
+
+    std::vector<AggregateUnit> units = {agg_unit};
+
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
+
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
+
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
 
 TEST_F(SSBTestFixture, SSBQ3_2) {
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  cust = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/customer.hsl");
+    cust = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/customer.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto c_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "nation",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("UNITED STATES"))
-  );
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto c_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "nation",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("UNITED STATES"))
+    );
 
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "nation",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("UNITED STATES"))
-  );
-  auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1992)
-  );
-  auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1997)
-  );
-  auto d_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (d_select_op_1, d_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "nation",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("UNITED STATES"))
+    );
+    auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1992)
+    );
+    auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1997)
+    );
+    auto d_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (d_select_op_1, d_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  arrow::compute::Datum empty_selection;
+    arrow::compute::Datum empty_selection;
 
-  auto d_selection = d_select_op_composite_1->select(date);
-  auto s_selection = s_select_op->select(supp);
-  auto c_selection = c_select_op->select(cust);
-
-
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_c_ref = {lineorder, "cust key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
-
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference c_ref = {cust, "cust key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
-
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
-
-  auto join_result_1 = join_op_1->hash_join();
-
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_c_ref,
-      c_ref, c_selection);
-
-  auto join_result_2 = join_op_2->hash_join();
-
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, d_selection);
-
-  auto join_result_3 = join_op_3->hash_join();
+    auto d_selection = d_select_op_composite_1->select(date);
+    auto s_selection = s_select_op->select(supp);
+    auto c_selection = c_select_op->select(cust);
 
 
-  //TODO(nicholas): Result is incorrectly grouped when two column
-  // references share the same name.
-  std::vector<ColumnReference> group_bys = {{cust, "city"},
-                                            {supp, "city"},
-                                            {date,"year"}};
-  //TODO(nicholas): We currently do not support sorting on the aggregate
-  // column, so this result will not look as expected.
-  //TODO(nicholas): The strings in order_bys must correspond to the
-  // ColumnReferences in group_bys. Since we group_by year last, we must
-  // put two placeholder empty string before it. Need to fix this.
-  std::vector<ColumnReference> order_bys = {{date,"year"}};
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_c_ref = {lineorder, "cust key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference c_ref = {cust, "cust key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    auto join_result_1 = join_op_1->hash_join();
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_c_ref,
+            c_ref, c_selection);
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto join_result_2 = join_op_2->hash_join();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, d_selection);
+
+    auto join_result_3 = join_op_3->hash_join();
+
+
+    //TODO(nicholas): Result is incorrectly grouped when two column
+    // references share the same name.
+    std::vector<ColumnReference> group_bys = {{cust, "city"},
+                                              {supp, "city"},
+                                              {date,"year"}};
+    //TODO(nicholas): We currently do not support sorting on the aggregate
+    // column, so this result will not look as expected.
+    //TODO(nicholas): The strings in order_bys must correspond to the
+    // ColumnReferences in group_bys. Since we group_by year last, we must
+    // put two placeholder empty string before it. Need to fix this.
+    std::vector<ColumnReference> order_bys = {{date,"year"}};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
+
+    std::vector<AggregateUnit> units = {agg_unit};
+
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
+
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
+
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
 
 TEST_F(SSBTestFixture, SSBQ3_3) {
-  auto t11 = std::chrono::high_resolution_clock::now();
+    auto t11 = std::chrono::high_resolution_clock::now();
 
-  lineorder = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
+    lineorder = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/lineorder.hsl");
 
-  date = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/date.hsl");
+    date = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/date.hsl");
 
-  supp = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
+    supp = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/supplier.hsl");
 
-  cust = read_from_file
-      ("/Users/corrado/hustle/src/table/tests/customer.hsl");
+    cust = read_from_file
+            ("/Users/corrado/hustle/src/table/tests/customer.hsl");
 
-  auto t22 = std::chrono::high_resolution_clock::now();
+    auto t22 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "READ FROM FILE TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t22-t11).count() << " ms" << std::endl;
+    std::cout << "READ FROM FILE TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t22-t11).count() << " ms" << std::endl;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-  // IMPORTANT: There is no Datum constructor that accepts a string as a
-  // parameter. You must first create a StringScalar and then pass that in.
-  // If you pass in a string to the Datum constructor, it will interpret it
-  // as boolean.
-  auto c_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "nation",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("UNITED STATES"))
-  );
+    // IMPORTANT: There is no Datum constructor that accepts a string as a
+    // parameter. You must first create a StringScalar and then pass that in.
+    // If you pass in a string to the Datum constructor, it will interpret it
+    // as boolean.
+    auto c_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "nation",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("UNITED STATES"))
+    );
 
-  auto s_select_op = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::EQUAL,
-      "nation",
-      arrow::compute::Datum(
-          std::make_shared<arrow::StringScalar>("UNITED STATES"))
-  );
-  auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::GREATER_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1992)
-  );
-  auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
-      arrow::compute::CompareOperator::LESS_EQUAL,
-      "year",
-      arrow::compute::Datum((int64_t) 1997)
-  );
-  auto d_select_op_composite_1 =
-      std::make_shared<hustle::operators::SelectComposite>
-          (d_select_op_1, d_select_op_2,
-           hustle::operators::FilterOperator::AND);
+    auto s_select_op = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::EQUAL,
+            "nation",
+            arrow::compute::Datum(
+                    std::make_shared<arrow::StringScalar>("UNITED STATES"))
+    );
+    auto d_select_op_1 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::GREATER_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1992)
+    );
+    auto d_select_op_2 = std::make_shared<hustle::operators::Select>(
+            arrow::compute::CompareOperator::LESS_EQUAL,
+            "year",
+            arrow::compute::Datum((int64_t) 1997)
+    );
+    auto d_select_op_composite_1 =
+            std::make_shared<hustle::operators::SelectComposite>
+                    (d_select_op_1, d_select_op_2,
+                     hustle::operators::FilterOperator::AND);
 
-  arrow::compute::Datum empty_selection;
+    arrow::compute::Datum empty_selection;
 
-  auto d_selection = d_select_op_composite_1->select(date);
-  auto s_selection = s_select_op->select(supp);
-  auto c_selection = c_select_op->select(cust);
+    auto d_selection = d_select_op_composite_1->select(date);
+    auto s_selection = s_select_op->select(supp);
+    auto c_selection = c_select_op->select(cust);
 
-  ColumnReference lo_s_ref = {lineorder, "supp key"};
-  ColumnReference lo_c_ref = {lineorder, "cust key"};
-  ColumnReference lo_p_ref = {lineorder, "part key"};
-  ColumnReference lo_d_ref = {lineorder, "order date"};
+    ColumnReference lo_s_ref = {lineorder, "supp key"};
+    ColumnReference lo_c_ref = {lineorder, "cust key"};
+    ColumnReference lo_p_ref = {lineorder, "part key"};
+    ColumnReference lo_d_ref = {lineorder, "order date"};
 
-  ColumnReference s_ref = {supp, "supp key"};
-  ColumnReference c_ref = {cust, "cust key"};
-  ColumnReference p_ref = {part, "part key"};
-  ColumnReference d_ref = {date, "date key"};
+    ColumnReference s_ref = {supp, "supp key"};
+    ColumnReference c_ref = {cust, "cust key"};
+    ColumnReference p_ref = {part, "part key"};
+    ColumnReference d_ref = {date, "date key"};
 
-  auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
-      s_ref, s_selection);
+    auto join_op_1 = std::make_shared<hustle::operators::Join>(
+            lo_s_ref, empty_selection,
+            s_ref, s_selection);
 
-  auto join_result_1 = join_op_1->hash_join();
+    auto join_result_1 = join_op_1->hash_join();
 
-  auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_c_ref,
-      c_ref, c_selection);
+    auto join_op_2 = std::make_shared<hustle::operators::Join>(
+            join_result_1, lo_c_ref,
+            c_ref, c_selection);
 
-  auto join_result_2 = join_op_2->hash_join();
+    auto join_result_2 = join_op_2->hash_join();
 
-  auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_d_ref,
-      d_ref, d_selection);
+    auto join_op_3 = std::make_shared<hustle::operators::Join>(
+            join_result_2, lo_d_ref,
+            d_ref, d_selection);
 
-  auto join_result_3 = join_op_3->hash_join();
+    auto join_result_3 = join_op_3->hash_join();
 
-  std::vector<ColumnReference> group_bys = {{date,"year"},
-                                            {cust, "city"},
-                                            {supp, "city"},
-  };
-  //TODO(nicholas): We currently do not support sorting on the aggregate
-  // column, so this result will not look as expected.
-  std::vector<ColumnReference> order_bys = {{date,"year"}};
-  AggregateUnit agg_unit = {AggregateKernels::SUM,
-                            lineorder,
-                            "revenue"};
+    std::vector<ColumnReference> group_bys = {{date,"year"},
+                                              {cust, "city"},
+                                              {supp, "city"},
+                                              };
+    //TODO(nicholas): We currently do not support sorting on the aggregate
+    // column, so this result will not look as expected.
+    std::vector<ColumnReference> order_bys = {{date,"year"}};
+    AggregateUnit agg_unit = {AggregateKernels::SUM,
+                              lineorder,
+                              "revenue"};
 
-  std::vector<AggregateUnit> units = {agg_unit};
+    std::vector<AggregateUnit> units = {agg_unit};
 
-  auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
-      join_result_3,
-      units,
-      group_bys,
-      order_bys);
+    auto aggregate_op = std::make_shared<hustle::operators::Aggregate>(
+            join_result_3,
+            units,
+            group_bys,
+            order_bys);
 
-  // Perform aggregate
-  auto aggregate = aggregate_op->aggregate();
+    // Perform aggregate
+    auto aggregate = aggregate_op->aggregate();
 
-  // Print the result. The valid bit will be printed as the first column.
-  if (aggregate != nullptr) aggregate->print();
+    // Print the result. The valid bit will be printed as the first column.
+    if (aggregate != nullptr) aggregate->print();
 
-  auto t2 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "QUERY EXECUTION TIME = " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>
-                (t2-t1).count() << " ms" << std::endl;
+    std::cout << "QUERY EXECUTION TIME = " <<
+              std::chrono::duration_cast<std::chrono::milliseconds>
+                      (t2-t1).count() << " ms" << std::endl;
 
 }
-
+*/
 TEST_F(SSBTestFixture, SSBQ4_1) {
 
   auto t11 = std::chrono::high_resolution_clock::now();
@@ -1413,6 +1413,7 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
   // If you pass in a string to the Datum constructor, it will interpet it
   // as boolean.
   auto p_select_op_1 = std::make_shared<hustle::operators::Select>(
+      part,
       arrow::compute::CompareOperator::EQUAL,
       "mfgr",
       arrow::compute::Datum(
@@ -1420,6 +1421,7 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
   );
 
   auto p_select_op_2 = std::make_shared<hustle::operators::Select>(
+      part,
       arrow::compute::CompareOperator::EQUAL,
       "mfgr",
       arrow::compute::Datum(
@@ -1428,10 +1430,11 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
 
   auto p_select_op_composite_1 =
       std::make_shared<hustle::operators::SelectComposite>
-          (p_select_op_1, p_select_op_2,
+          (part, p_select_op_1, p_select_op_2,
            hustle::operators::FilterOperator::OR);
 
   auto c_select_op = std::make_shared<hustle::operators::Select>(
+      cust,
       arrow::compute::CompareOperator::EQUAL,
       "region",
       arrow::compute::Datum(std::make_shared<arrow::StringScalar>
@@ -1439,6 +1442,7 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
   );
 
   auto s_select_op = std::make_shared<hustle::operators::Select>(
+      supp,
       arrow::compute::CompareOperator::EQUAL,
       "region",
       arrow::compute::Datum(std::make_shared<arrow::StringScalar>
@@ -1447,6 +1451,8 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
 
 
   arrow::compute::Datum empty_selection;
+  auto empty_result = std::make_shared<hustle::operators::SelectResult>
+      (empty_selection);
 
   ColumnReference lo_s_ref = {lineorder, "supp key"};
   ColumnReference lo_c_ref = {lineorder, "cust key"};
@@ -1458,33 +1464,33 @@ TEST_F(SSBTestFixture, SSBQ4_1) {
   ColumnReference p_ref = {part, "part key"};
   ColumnReference d_ref = {date, "date key"};
 
-  auto p_selection = p_select_op_composite_1->select(part);
-  auto s_selection = s_select_op->select(supp);
-  auto c_selection = c_select_op->select(cust);
+  auto p_selection = p_select_op_composite_1->run();
+  auto s_selection = s_select_op->run();
+  auto c_selection = c_select_op->run();
 
   auto join_op_1 = std::make_shared<hustle::operators::Join>(
-      lo_s_ref, empty_selection,
+      lo_s_ref, empty_result,
       s_ref, s_selection);
 
-  auto join_result_1 = join_op_1->hash_join();
+  auto join_result_1 = join_op_1->run();
 
   auto join_op_2 = std::make_shared<hustle::operators::Join>(
-      join_result_1, lo_c_ref,
+      lo_c_ref, join_result_1,
       c_ref, c_selection);
 
-  auto join_result_2 = join_op_2->hash_join();
+  auto join_result_2 = join_op_2->run();
 
   auto join_op_3 = std::make_shared<hustle::operators::Join>(
-      join_result_2, lo_p_ref,
+      lo_p_ref, join_result_2,
       p_ref, p_selection);
 
-  auto join_result_3 = join_op_3->hash_join();
+  auto join_result_3 = join_op_3->run();
 
   auto join_op_4 = std::make_shared<hustle::operators::Join>(
-      join_result_3,  lo_d_ref,
-      d_ref, empty_selection);
+      lo_d_ref, join_result_3,
+      d_ref, empty_result);
 
-  auto join_result_4 = join_op_4->hash_join();
+  auto join_result_4 = join_op_4->run();
 
   std::vector<ColumnReference> group_bys = {{date,"year"},
                                             {cust, "nation"}};

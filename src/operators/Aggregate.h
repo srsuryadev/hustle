@@ -30,16 +30,18 @@ class Aggregate : public Operator{
 public:
 
     Aggregate(
-            std::vector<JoinResult> join_result,
-             std::vector<AggregateUnit> Aggregate_units,
-             std::vector<ColumnReference> group_by_fields,
-             std::vector<ColumnReference> order_by_fields);
+            std::shared_ptr<OperatorResult> join_result,
+            std::vector<AggregateUnit> aggregate_units,
+            std::vector<ColumnReference> group_bys,
+            std::vector<ColumnReference> order_bys);
 
     std::shared_ptr<Table> aggregate();
+    std::shared_ptr<OperatorResult> run() override;
+
 
 protected:
     arrow::compute::Datum selection_;
-    std::vector<JoinResult> join_result_;
+    std::vector<JoinResultColumn> join_result_;
 
     std::vector<ColumnReference> order_bys_;
     std::vector<ColumnReference> group_bys_;

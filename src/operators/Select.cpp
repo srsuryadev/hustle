@@ -10,18 +10,20 @@ namespace hustle {
 namespace operators {
 
 SelectComposite::SelectComposite(
+        std::shared_ptr<Table> table,
         std::shared_ptr<SelectOperator> left_child,
         std::shared_ptr<SelectOperator> right_child,
         FilterOperator filter_operator){
 
+    table_ = table;
     left_child_ = std::move(left_child);
     right_child_ = std::move(right_child);
     filter_operator_ = filter_operator;
 }
 
-arrow::compute::Datum SelectComposite::select(std::shared_ptr<Table> table) {
-
-    return get_filter(table);
+std::shared_ptr<OperatorResult> SelectComposite::run() {
+    auto filter = get_filter(table_);
+    return std::make_shared<SelectResult>(filter);
 }
 
 arrow::compute::Datum SelectComposite::get_filter
@@ -79,43 +81,24 @@ arrow::compute::Datum SelectComposite::get_filter(std::shared_ptr<Block>
 
 }
 
-    Select::Select(
-            arrow::compute::CompareOperator compare_operator,
-            std::string column_name,
-            arrow::compute::Datum column_value) {
-        compare_operator_ = compare_operator;
-        column_name_ = std::move(column_name);
-        column_value_ = std::move(column_value);
-    }
+///////////////////////////////////////////////////////////////////////////////
 
-    arrow::compute::Datum Select::select(std::shared_ptr<Table>
-            table) {
+Select::Select(
+        std::shared_ptr<Table> table,
+        arrow::compute::CompareOperator compare_operator,
+        std::string column_name,
+        arrow::compute::Datum column_value) {
 
-    return get_filter(table);
+    table_ = table;
+    compare_operator_ = compare_operator;
+    column_name_ = std::move(column_name);
+    column_value_ = std::move(column_value);
 }
 
-    arrow::compute::Datum Select::get_filter
-            (std::shared_ptr<Block> block) {
-
-        arrow::Status status;
-
-        arrow::compute::FunctionContext function_context(arrow::default_memory_pool());
-        arrow::compute::CompareOptions compare_options(compare_operator_);
-        arrow::compute::Datum block_filter;
-
-        auto select_col = block->get_column_by_name(column_name_);
-
-        // NOTE: We must fetch filters one block at a time, since the Compare
-        // only accepts Array Datum, not ChunkedArray Datum.
-        status = arrow::compute::Compare(&function_context,
-                                         select_col,
-                                         column_value_,
-                                         compare_options,
-                                         &block_filter);
-        evaluate_status(status, __FUNCTION__, __LINE__);
-
-        return block_filter;
-    }
+std::shared_ptr<OperatorResult> Select::run() {
+    auto filter = get_filter(table_);
+    return std::make_shared<SelectResult>(filter);
+}
 
     arrow::compute::Datum Select::get_filter
             (std::shared_ptr<Table> table) {
@@ -134,5 +117,29 @@ arrow::compute::Datum SelectComposite::get_filter(std::shared_ptr<Block>
         return out;
     }
 
-    } // namespace operators
+    arrow::compute::Datum Select::get_filter
+        (std::shared_ptr<Block> block) {
+
+    arrow::Status status;
+
+    arrow::compute::FunctionContext function_context(arrow::default_memory_pool());
+    arrow::compute::CompareOptions compare_options(compare_operator_);
+    arrow::compute::Datum block_filter;
+
+    auto select_col = block->get_column_by_name(column_name_);
+
+    // NOTE: We must fetch filters one block at a time, since the Compare
+    // only accepts Array Datum, not ChunkedArray Datum.
+    status = arrow::compute::Compare(&function_context,
+                                     select_col,
+                                     column_value_,
+                                     compare_options,
+                                     &block_filter);
+    evaluate_status(status, __FUNCTION__, __LINE__);
+
+    return block_filter;
+}
+
+
+} // namespace operators
 } // namespace hustle
