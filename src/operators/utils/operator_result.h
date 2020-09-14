@@ -19,6 +19,7 @@
 #define HUSTLE_OPERATORRESULT_H
 
 #include <arrow/compute/api.h>
+#include <utils/parallel_hashmap/phmap.h>
 
 #include <string>
 
@@ -27,6 +28,11 @@
 #include "storage/table.h"
 
 namespace hustle::operators {
+
+struct RecordID {
+  uint32_t index;
+  uint16_t chunk;
+};
 
 enum FilterOperator {
   AND,
@@ -105,6 +111,9 @@ class OperatorResult {
       const std::vector<ColumnReference>& col_refs);
 
   std::vector<LazyTable> lazy_tables_;
+  // Hash table for the right table in each join
+  phmap::flat_hash_map<int64_t, RecordID> hash_table_;
+  bool is_hash_table_avail = false;
 
   void set_materialized_col(std::shared_ptr<Table> table, int i,
                             std::shared_ptr<arrow::ChunkedArray> col);

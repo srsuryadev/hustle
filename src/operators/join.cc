@@ -109,7 +109,12 @@ void Join::HashJoin(int join_id, Task *ctx) {
       }),
       CreateLambdaTask([this, join_id](Task *internal) {
         // Build phase
-        if (right_.filter.kind() == arrow::Datum::CHUNKED_ARRAY) {
+        std::cout << prev_result_vec_.size() << std::endl;
+        if (prev_result_vec_[1]->is_hash_table_avail) {
+          hash_table_ = prev_result_vec_[1]->hash_table_;
+          std::cout << "constructed hash table: " << hash_table_.size()
+                    << std::endl;
+        } else if (right_.filter.kind() == arrow::Datum::CHUNKED_ARRAY) {
           BuildHashTable(right_join_col_.chunked_array(),
                          right_.filter.chunked_array(), internal);
         } else {

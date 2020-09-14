@@ -19,6 +19,7 @@
 
 #include "execution/execution_plan.h"
 #include "operators/aggregate.h"
+#include "operators/fused/select_build_hash.h"
 #include "operators/join.h"
 #include "operators/join_graph.h"
 #include "operators/predicate.h"
@@ -181,13 +182,14 @@ void SSB::q11() {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  Select lo_select_op(0, lo, lo_result_in, lo_select_result_out, lo_pred_tree);
-  Select d_select_op(0, d, d_result_in, d_select_result_out, d_pred_tree);
-
   join_result_in = {lo_select_result_out, d_select_result_out};
 
   JoinPredicate join_pred = {lo_d_ref, arrow::compute::EQUAL, d_ref};
   JoinGraph graph({{join_pred}});
+  Select lo_select_op(0, lo, lo_result_in, lo_select_result_out, lo_pred_tree);
+  SelectBuildHash d_select_op(0, d, d_result_in, d_select_result_out,
+                              d_pred_tree, join_pred.right_col_ref_);
+
   Join join_op(0, join_result_in, join_result_out, graph);
 
   AggregateReference agg_ref = {AggregateKernel::SUM, "revenue", lo_rev_ref};

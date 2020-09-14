@@ -212,25 +212,25 @@ static void query43(benchmark::State& state) {
   }
 }
 
-BENCHMARK(query11);
-BENCHMARK(query12);
-BENCHMARK(query13);
-BENCHMARK(query21);
-BENCHMARK(query22);
-BENCHMARK(query23);
-BENCHMARK(query31);
-BENCHMARK(query32);
-BENCHMARK(query33);
-BENCHMARK(query34);
-BENCHMARK(query41);
-BENCHMARK(query42);
-BENCHMARK(query43);
+BENCHMARK(query11); /*
+ BENCHMARK(query12);
+ BENCHMARK(query13);
+ BENCHMARK(query21);
+ BENCHMARK(query22);
+ BENCHMARK(query23);
+ BENCHMARK(query31);
+ BENCHMARK(query32);
+ BENCHMARK(query33);
+ BENCHMARK(query34);
+ BENCHMARK(query41);
+ BENCHMARK(query42);
+ BENCHMARK(query43);*/
 
 int main(int argc, char* argv[]) {
   std::cout << "Started initializing with the required data ..." << std::endl;
   read_from_csv();
 
-  workload = new SSB();
+  workload = new SSB(0, 1);
 
   ::benchmark::Initialize(&argc, argv);
 
