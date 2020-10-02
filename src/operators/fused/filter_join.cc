@@ -31,6 +31,8 @@ FilterJoin::FilterJoin(
   prev_result_vec_ = prev_result_vec;
   output_result_ = std::move(output_result);
   graph_ = std::move(graph);
+
+  pool_ = arrow::MemoryPool::CreateDefault();
 }
 
 void FilterJoin::BuildFilters(Task *ctx) {
@@ -117,6 +119,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
       int32_t indices_length = -1, dim_indices_length = -1;
       uint32_t current_idx_temp, offset = chunk_row_offsets_[chunk_i];
 
+      arrow::stl::allocator<uint32_t> alloc(pool_.get());
+
       // TODO(nicholas): For now, we assume the column is of INT64 type
       auto chunk = fact_fk_col->chunk(chunk_i);  // @bug: fact_fk_col is nullptr
       auto chunk_data = chunk->data()->GetValues<int64_t>(1, 0);
@@ -127,8 +131,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
       if (filter_j == 0) {
         // Reserve space for the first index vector
         int join_row_idx = 0;
-        indices = (uint32_t *)malloc(sizeof(uint32_t) * chunk_length);
-        dim_indices = (uint32_t *)malloc(sizeof(uint32_t) * chunk_length);
+        indices = (uint32_t *)alloc.allocate(chunk_length);
+        dim_indices = (uint32_t *)alloc.allocate(chunk_length);
         if (dim_filters_[filter_j].hash_table != nullptr) {
           for (int64_t row = 0; row < chunk_length; ++row) {
             if (bloom_filter->probe(chunk_data[row])) {
@@ -150,8 +154,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
         dim_filters_[filter_j].indices_[chunk_i] = std::vector<uint32_t>(
             dim_indices, dim_indices + indices_length + 1);
 
-        free(indices);
-        free(dim_indices);
+        alloc.deallocate(indices, chunk_length);
+        alloc.deallocate(dim_indices, chunk_length);
       }
       // For the remaining filters, we only need to probe rows that passed
       // the previous filters.
@@ -164,8 +168,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
         }
         indices = lip_indices_[chunk_i].data();
         indices_length = lip_indices_[chunk_i].size() - 1;
-        dim_indices = (uint32_t *)malloc(sizeof(uint32_t) * chunk_length);
 
+        dim_indices = (uint32_t *)alloc.allocate(chunk_length);
         int join_row_idx = 0;
         if (dim_filters_[filter_j].hash_table != nullptr) {
           while (join_row_idx <= indices_length) {
@@ -223,7 +227,7 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
             dim_indices, dim_indices + indices_length + 1);
 
         lip_indices_[chunk_i].resize(indices_length + 1);
-        free(dim_indices);
+        alloc.deallocate(dim_indices, chunk_length);
       }
     });
   }
@@ -369,19 +373,20 @@ void FilterJoin::Finish() {
   std::shared_ptr<arrow::UInt32Array> fact_indices;
   std::shared_ptr<arrow::UInt16Array> fact_index_chunks;
 
+  arrow::stl::allocator<uint16_t> alloc(pool_.get());
   // Append all of the LIP indices to an ArrayBuilder.
   for (size_t chunk_idx = 0; chunk_idx < lip_indices_.size(); chunk_idx++) {
     status = fact_indices_builder.AppendValues(lip_indices_[chunk_idx]);
     evaluate_status(status, __PRETTY_FUNCTION__, __LINE__);
 
     auto temp_chunk_indices =
-        (uint16_t *)malloc(sizeof(uint16_t) * lip_indices_[chunk_idx].size());
+        (uint16_t *)alloc.allocate(lip_indices_[chunk_idx].size());
     std::fill_n(temp_chunk_indices, lip_indices_[chunk_idx].size(), chunk_idx);
     status = fact_index_chunks_builder.AppendValues(
         temp_chunk_indices, lip_indices_[chunk_idx].size());
     evaluate_status(status, __PRETTY_FUNCTION__, __LINE__);
 
-    free(temp_chunk_indices);
+    alloc.deallocate(temp_chunk_indices, lip_indices_[chunk_idx].size());
   }
 
   std::vector<std::shared_ptr<arrow::UInt32Array>> dim_indices;

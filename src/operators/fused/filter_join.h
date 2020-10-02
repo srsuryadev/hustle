@@ -19,6 +19,8 @@
 #define HUSTLE_FILTER_JOIN_H
 
 #include <arrow/compute/api.h>
+#include <arrow/memory_pool.h>
+#include <arrow/stl_allocator.h>
 
 #include <string>
 
@@ -119,6 +121,7 @@ class FilterJoin : public Operator {
 
   // A graph specifying all join predicates
   JoinGraph graph_;
+  std::unique_ptr<arrow::MemoryPool> pool_;
 
   /**
    * Initialize auxillary data structures, i.e. precompute elements of
