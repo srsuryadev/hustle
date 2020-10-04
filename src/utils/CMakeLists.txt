@@ -30,6 +30,7 @@ add_library(hustle_src_utils_ArrowComputeWrappers arrow_compute_wrappers.cc arro
 #add_library(hustle_src_utils_ContextPool context_pool.cc context_pool.h)
 add_library(hustle_src_utils_ParallelHashmap ../empty_src.cc parallel_hashmap/phmap.h)
 add_library(hustle_src_utils_skew ../empty_src.cc skew.h)
+add_library(hustle_src_utils_PoolAllocator ../empty_src.cc pool_allocator.h)
 
 
 add_library(hustle_src_utils_BloomFilter ../empty_src.cc bloom_filter.h histogram.h)

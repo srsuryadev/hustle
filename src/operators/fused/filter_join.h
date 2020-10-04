@@ -31,6 +31,7 @@
 #include "storage/table.h"
 #include "utils/bloom_filter.h"
 #include "utils/histogram.h"
+#include "utils/pool_allocator.h"
 
 namespace hustle::operators {
 

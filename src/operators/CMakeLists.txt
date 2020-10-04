@@ -18,9 +18,10 @@ add_library(
 target_include_directories(hustle_src_operators PUBLIC ${ARROW_INCLUDE_DIR})
 target_link_libraries(hustle_src_operators PUBLIC
         hustle_src_storage
-        hustle_src_utils_EventProfiler
         hustle_src_utils_ArrowComputeWrappers
+        hustle_src_utils_EventProfiler
         hustle_src_utils_ParallelHashmap
+        hustle_src_utils_PoolAllocator
         ${ARROW_SHARED_LIB}
         )
 
