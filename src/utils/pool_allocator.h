@@ -36,6 +36,8 @@ struct Chunk {
   Chunk *next;
 };
 
+static const uint32_t kNumSlots = 520;
+static const uint32_t kSlotSize = 520 * 1024;
 /**
  * The allocator class.
  *
@@ -50,11 +52,17 @@ struct Chunk {
 class PoolAllocator {
  public:
   static PoolAllocator &getInstance() {
-    static PoolAllocator instance{1000};
+    static PoolAllocator instance{0};
     return instance;
   }
 
-  void *allocate(size_t size) {
+  void *allocate(int index, int chunk_index) {
+    if (index == 0) {
+      return pool0[chunk_index];
+    }
+    return pool1[chunk_index];
+  }
+  void *custom_allocate(size_t size) {
     std::lock_guard<std::mutex> guard(mutex_);
     // No chunks left in the current block, or no any block
     // exists yet. Allocate a new one, passing the chunk size:
@@ -95,7 +103,17 @@ class PoolAllocator {
   PoolAllocator(size_t chunksPerBlock) : mChunksPerBlock(chunksPerBlock) {
     initialize();
   }
-  void initialize() { allocate(512 * 1024); }
+  void initialize() {
+    // allocate(512 * 1024);
+
+    for (size_t i = 0; i < kNumSlots; i++) {
+      pool0[i] = (char *)malloc(kSlotSize);
+      pool1[i] = (char *)malloc(kSlotSize);
+    }
+  }
+
+  char *pool0[kNumSlots];
+  char *pool1[kNumSlots];
   /**
    * Number of chunks per larger block.
    */

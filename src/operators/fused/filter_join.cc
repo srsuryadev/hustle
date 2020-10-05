@@ -134,8 +134,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
         int join_row_idx = 0;
         // indices = (uint32_t *)alloc.allocate(chunk_length);
         // dim_indices = (uint32_t *)alloc.allocate(chunk_length);
-        indices = (uint32_t *)pool_alloc->allocate(chunk_length);
-        dim_indices = (uint32_t *)pool_alloc->allocate(chunk_length);
+        indices = (uint32_t *)pool_alloc->allocate(0, chunk_i);
+        dim_indices = (uint32_t *)pool_alloc->allocate(1, chunk_i);
         if (dim_filters_[filter_j].hash_table != nullptr) {
           for (int64_t row = 0; row < chunk_length; ++row) {
             if (bloom_filter->probe(chunk_data[row])) {
@@ -157,8 +157,8 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
         dim_filters_[filter_j].indices_[chunk_i] = std::vector<uint32_t>(
             dim_indices, dim_indices + indices_length + 1);
 
-        pool_alloc->deallocate(indices, chunk_length);
-        pool_alloc->deallocate(dim_indices, chunk_length);
+        // pool_alloc->deallocate(indices, chunk_length);
+        // pool_alloc->deallocate(dim_indices, chunk_length);
       }
       // For the remaining filters, we only need to probe rows that passed
       // the previous filters.
@@ -172,7 +172,7 @@ void FilterJoin::ProbeFilters(int chunk_start, int chunk_end, int filter_j,
         indices = lip_indices_[chunk_i].data();
         indices_length = lip_indices_[chunk_i].size() - 1;
 
-        dim_indices = (uint32_t *)pool_alloc->allocate(chunk_length);
+        dim_indices = (uint32_t *)pool_alloc->allocate(1, chunk_i);
         int join_row_idx = 0;
         if (dim_filters_[filter_j].hash_table != nullptr) {
           while (join_row_idx <= indices_length) {
